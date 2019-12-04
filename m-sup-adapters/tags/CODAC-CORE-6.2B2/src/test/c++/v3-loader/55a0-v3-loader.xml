@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<object application="codac:obj-factory" name="gbs-tcn-health" xmlns="urn:x-iter:plant:2015" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2015 Plant.xsd">
+  <libraries>
+    <!-- Load basic library -->
+    <library>libsup-config.so</library> <!-- CFG related classes -->
+  </libraries>
+  <instances>
+    <instance name="gtdb" type="sup::core::MsgableTypeDatabase">
+      <message>
+Register('
+{"type":"struct_5a1d21dd-2274-4731-be23-05222371164a",
+ "attributes":[{"enabled":{"type":"bool","size":1}},
+               {"geometry":{"type":"struct_301e9c6c-200a-482f-8cc4-380dfcc3b66e",
+                            "attributes":[{"r":{"type":"float64","size":8}},
+                                          {"z":{"type":"float64","size":8}},
+                                          {"angle":{"type":"float64","size":8}}
+                                         ]
+                           }
+               }
+              ]
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"array_c1110562-526e-40d3-92ae-6a7b2857c920",
+ "multiplicity":4,
+ "element":{"type":"struct_5a1d21dd-2274-4731-be23-05222371164a"}
+}
+')
+      </message>
+    </instance>
+    <instance name="55a0-adapter" type="sup::core::EPICSv3PlantSystemAdapter">
+      <parameter name="verbose">true</parameter>
+      <message>Create('{"name":"","type":"array_c1110562-526e-40d3-92ae-6a7b2857c920"}')</message>
+      <message>Associate('{"name":"[0].enabled","channel":"D1-A0-CFG:S0-ENABLE"}')</message>
+      <message>Associate('{"name":"[1].enabled","channel":"D1-A0-CFG:S1-ENABLE"}')</message>
+      <message>Associate('{"name":"[2].enabled","channel":"D1-A0-CFG:S2-ENABLE"}')</message>
+      <message>Associate('{"name":"[3].enabled","channel":"D1-A0-CFG:S3-ENABLE"}')</message>
+      <message>Associate('{"name":"[0].geometry.angle","channel":"D1-A0-CFG:S0-ANGLE"}')</message>
+      <message>Start()</message>
+    </instance>
+    <instance name="55a0-service" type="sup::core::ConfigurationService">
+      <parameter name="verbose">true</parameter>
+      <parameter name="service">55a0::Cfg::Interface</parameter>
+      <parameter name="handler">55a0-adapter</parameter>
+    </instance>
+  </instances>
+</object>

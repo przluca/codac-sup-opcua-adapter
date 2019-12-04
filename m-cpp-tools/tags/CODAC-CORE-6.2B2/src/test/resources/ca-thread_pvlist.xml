@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<pvlist application="codac:test" name="ca-thread_pvlist" xmlns="urn:x-iter:plant:2014" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2014 Plant.xsd">
+  <variable id="0" name="TEST:BOOL" direction="inout" dataType="bool">false</variable>
+  <variable id="0" name="TEST:FLOAT" direction="inout" dataType="double">0</variable>
+  <variable id="0" name="TEST:LONG" direction="inout" dataType="uint32">0</variable>
+<!-- String variables -->
+  <variable id="0" name="TEST:STRING" direction="inout" dataType="string">undefined</variable>
+  <variable id="0" name="TEST:CHAR-ARRAY" direction="inout" dataType="char" multiplicity="64"/>
+  <variable id="0" name="TEST:CHAR-1024" direction="inout" dataType="char" multiplicity="1024"/>
+  <variable id="0" name="TEST:BOOL-ARRAY" direction="inout" dataType="bool" multiplicity="16"/>
+  <variable id="0" name="TEST:FLOAT-ARRAY" direction="inout" dataType="float" multiplicity="8"/>
+</pvlist>
+

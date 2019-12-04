@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<topic name="reserved" version="1" size="32" mapping="239.0.0.1:60000">
+  <attribute rank="0" name="identifier" dataType="uint64"/>
+  <attribute rank="1" name="timestamp" dataType="uint64"/>
+  <attribute rank="2" name="reserved" dataType="char" multiplicity="16"/>
+</topic>

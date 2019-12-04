@@ -1,0 +1,169 @@
+/******************************************************************************
+* $HeadURL$
+* $Id$
+*
+* Project	: CODAC Core System
+*
+* Description	: Unit test code
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*				  CS 90 046
+*				  13067 St. Paul-lez-Durance Cedex
+*				  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <gtest/gtest.h> // Google test framework
+
+// Local header files
+
+#include "types.h" // Misc. type definition
+#include "tools.h" // Misc. helper functions
+
+#include "log-wrap.h" // Syslog wrapper routines
+
+#include "lu-table.h"
+
+// Constants
+
+// Type definition
+
+// Global variables
+
+static KeywordValuePair<uint_t> __table [] = 
+{
+
+  { "zero", 0 },
+  { "one",  1 },
+  { "two",  2 },
+  { "three", 3 },
+  { "four",  4 },
+  { EOT_KEYWORD, 0 }
+
+};
+
+// Internal function declaration
+
+// Internal function definition
+
+TEST(LUTable_Test, Constructor_uint)
+{
+  bool ret = false;
+
+  LUTable<uint_t>* table = new (std::nothrow) LUTable<uint_t>;
+
+  ret = (table != static_cast<LUTable<uint_t>*>(NULL));
+
+  if (ret)
+    {
+      delete table;
+    }
+
+  ASSERT_EQ(ret, true);
+}
+
+TEST(LUTable_Test, AddPair_success)
+{
+  bool ret = false;
+
+  LUTable<uint_t>* table = new (std::nothrow) LUTable<uint_t> (16);
+
+  ret = (table != static_cast<LUTable<uint_t>*>(NULL));
+
+  if (ret)
+    {
+      uint_t value = 0u;
+      ret = (table->AddPair("zero",  value) == STATUS_SUCCESS);
+    }
+
+  if (ret)
+    {
+      uint_t value = 1u;
+      ret = (table->AddPair("one",   value) == STATUS_SUCCESS);
+    }
+
+  if (ret)
+    {
+      uint_t value = 2u;
+      ret = (table->AddPair("two",   value) == STATUS_SUCCESS);
+    }
+
+  if (ret)
+    {
+      uint_t value = 3u;
+      ret = (table->AddPair("three", value) == STATUS_SUCCESS);
+    }
+
+  if (ret)
+    {
+      uint_t value = 4u;
+      ret = (table->AddPair("four",  value) == STATUS_SUCCESS);
+    }
+
+  if (ret)
+    {
+      ret = (table->GetSize() == 5u);
+    }
+
+  if (ret)
+    {
+      ret = (table->GetValue("two") == 2u);
+    }
+
+  if (ret)
+    {
+      ret = (table->GetValue(3u) == 3u);
+    }
+
+  if (ret)
+    {
+      delete table;
+    }
+
+  ASSERT_EQ(ret, true);
+}
+
+TEST(LUTable_Test, LoadTable_success)
+{
+  bool ret = false;
+
+  LUTable<uint_t>* table = new (std::nothrow) LUTable<uint_t> (16);
+
+  ret = (table != static_cast<LUTable<uint_t>*>(NULL));
+
+  if (ret)
+    {
+      ret = (table->LoadTable(static_cast<KeywordValuePair<uint_t>*>(__table)) == STATUS_SUCCESS);
+    }
+
+  if (ret)
+    {
+      ret = (table->GetSize() == 5u);
+    }
+
+  if (ret)
+    {
+      ret = (table->GetValue("two") == 2u);
+    }
+
+  if (ret)
+    {
+      ret = (table->GetValue(3u) == 3u);
+    }
+
+  if (ret)
+    {
+      delete table;
+    }
+
+  ASSERT_EQ(ret, true);
+}
+

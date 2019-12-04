@@ -1,0 +1,32 @@
+Changes for 1.2.1:
+
+- Refactor CVVF and CFG in separate libraries.
+
+Changes for 1.2:
+
+- Refactored matlab and python support in separate units.
+- Integrate CVVF-related base classes.
+  - Add (Registered)FunctionDatabase class.
+  - Add (Registered)TypeDatabase class.
+  - Add DPCHandler class.
+  - Add unit tests.
+
+Changes for 1.1.2:
+
+- Integrate ObjectFactoryEngine class for SUP activities.
+
+Changes for 1.1.1:
+
+- Bug 10091 - UCAST participants to use NTPd control message interface.
+- Bug 10103 - Test for NULL buffer as part of ccs::base::Messenger::Receive.
+- Bug 10163 - Log verbosity.
+- Backport -std=c++11 to use boost.
+
+Changes for 1.1:
+
+- Revise logging verbosity.
+
+Changes for 1.0.1:
+
+- Missing required dependencies in the POM file.
+- Bug 10040 - Missing COS aggregation/fan-out service from CCSv5.4 packages.

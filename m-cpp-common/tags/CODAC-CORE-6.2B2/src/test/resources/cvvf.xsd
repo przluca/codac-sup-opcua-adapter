@@ -1,0 +1,136 @@
+<xs:schema>
+  <xs:element name="Configuration">
+    <xs:sequence>
+      <xs:element name="Workspace">
+        <xs:annotation>
+          <xs:documentation>
+          This section relates to the definition of locally-scoped variables and their types.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+	  <xs:sequence>
+            <xs:element name="DataTypes">
+              <xs:annotation>
+                <xs:documentation>
+                We need to be able to support declaration such as ..
+                  <DataType name="app:Config_t" version="1.0">
+                    <attribute name="scalar" type="float64" unit="" description="" multiplicity="" default=""/>
+                    <attribute name="struct" description="">
+                      <attribute name="enable" type="boolean"/>
+                    </attribute>
+                  </DataType>
+                </xs:documentation>
+              </xs:annotation>
+              <xs:complexType>
+                <xs:element name="DataType" type="AnyType" minOccurs="0" maxOccurs="unbounded">
+                  <xs:attribute name="name" type="xs:string"/>
+                  <xs:attribute name="version" type="xs:string"/>
+                </xs:element>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="Variables">
+              <xs:complexType>
+                <xs:element name="Variable" minOccurs="0" maxOccurs="unbounded">
+                  <xs:complexType>
+                    <xs:attribute name="name" type="xs:string"/>
+                    <xs:attribute name="type" type="xs:string"/>
+                  </xs:complexType>
+                </xs:element>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Processes">
+        <xs:annotation>
+          <xs:documentation>
+          This section corresponds to the definition of data transformation/verification processes.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+          <xs:element name="Process" minOccurs="0" maxOccurs="unbounded">
+            <xs:complexType>
+	      <xs:sequence>
+                <xs:element name="URI" type="xs:string"/>
+                <xs:element name="Configuration"/>
+                <xs:element name="Inputs">
+                  <xs:complexType>
+                    <xs:element name="Input" minOccurs="0" maxOccurs="unbounded">
+                      <xs:attribute name="name" type="xs:string"/> <!-- The local name -->
+                      <xs:attribute name="alias" type="xs:string"/> <!-- The reference to the workspace -->
+                    </xs:element>
+                  </xs:complexType>
+                </xs:element>
+                <xs:element name="Outputs">
+                  <xs:complexType>
+                    <xs:element name="Output" minOccurs="0" maxOccurs="unbounded">
+                      <xs:attribute name="name" type="xs:string"/> <!-- The local name -->
+                      <xs:attribute name="alias" type="xs:string"/> <!-- The reference to the workspace -->
+                    </xs:element>
+                  </xs:complexType>
+                </xs:element>
+	      </xs:sequence>
+              <xs:attribute name="name" type="xs:string"/>
+              <xs:attribute name="type" type="xs:string"/>
+            </xs:complexType>
+          </xs:element>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Interfaces">
+        <xs:annotation>
+          <xs:documentation>
+          This section corresponds to the definition of external interfaces.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+          <xs:element name="Interface" minOccurs="0" maxOccurs="unbounded">
+            <xs:complexType>
+	      <xs:sequence>
+                <xs:element name="Configuration"/>
+                <xs:element name="Inputs">
+                  <xs:complexType>
+                    <xs:element name="Input" minOccurs="0" maxOccurs="unbounded">
+                      <xs:attribute name="name" type="xs:string"/> <!-- The local name -->
+                      <xs:attribute name="alias" type="xs:string"/> <!-- The reference to the workspace -->
+                    </xs:element>
+                  </xs:complexType>
+                </xs:element>
+                <xs:element name="Outputs">
+                  <xs:complexType>
+                    <xs:element name="Output" minOccurs="0" maxOccurs="unbounded">
+                      <xs:attribute name="name" type="xs:string"/> <!-- The local name -->
+                      <xs:attribute name="alias" type="xs:string"/> <!-- The reference to the workspace -->
+                    </xs:element>
+                  </xs:complexType>
+                </xs:element>
+	      </xs:sequence>
+              <xs:attribute name="name" type="xs:string"/>
+              <xs:attribute name="type" type="xs:string"/>
+            </xs:complexType>
+          </xs:element>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:element>
+
+  <xs:complexType name="AnyType">
+    <xs:choice minOccurs="1" maxOccurs="1">
+    
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:simpleType name="ScalarType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="boolean"/>
+      <!-- Etc. -->
+      <xs:enumeration value="int32"/>
+      <xs:enumeration value="uint32"/>
+      <xs:enumeration value="int64"/>
+      <xs:enumeration value="uint64"/>
+      <xs:enumeration value="float32"/>
+      <xs:enumeration value="float64"/>
+      <xs:enumeration value="string"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

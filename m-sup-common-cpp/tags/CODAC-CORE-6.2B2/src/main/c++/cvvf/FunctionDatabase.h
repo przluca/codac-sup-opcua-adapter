@@ -1,0 +1,127 @@
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-sup-common-cpp/tags/CODAC-CORE-6.2B2/src/main/c++/cvvf/FunctionDatabase.h $
+* $Id: FunctionDatabase.h 99275 2019-04-25 06:34:12Z bauvirb $
+*
+* Project	: CODAC Core System
+*
+* Description	: Generic type class definition
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*				  CS 90 046
+*				  13067 St. Paul-lez-Durance Cedex
+*				  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+/**
+ * @file FunctionDatabase.h
+ * @brief Header file for FunctionDatabase class (singleton interface).
+ * @date 11/11/2018
+ * @author Bertrand Bauvir (IO)
+ * @copyright 2010-2018 ITER Organization
+ * @detail This header file contains the definition of the singleton FunctionDatabase interface.
+ * The FunctionDatabase class definition is not exposed through this header file. The interface
+ * to a singleton instance is provided. Using this interface in an application causes an implicit
+ * instantiation of the FunctionDatabase class and registration of all built-in ScalarType. Types
+ * are stored using smart pointers. This ensures persistence of Function definitions throughout the
+ * lifetime of an application without requiring the application to manage instances and/or
+ * references.
+ */
+
+#ifndef _FunctionDatabase_h_
+#define _FunctionDatabase_h_
+
+// Global header files
+
+// Local header files
+
+#include <BasicTypes.h>
+
+// Constants
+
+// Type definition
+
+namespace ccs {
+
+namespace types {
+
+typedef struct FunctionDefinition {
+
+  ccs::types::string name; // The name to use for registration
+  ccs::types::string input = ""; // Type name should separately be registered
+  ccs::types::string output = ""; // Type name should separately be registered
+  ccs::types::string config = ""; // Type name should separately be registered
+  void* function = static_cast<void*>(NULL); // Old and hugly type erasure
+
+} FunctionDefinition_t;
+
+// Global variables
+
+// Function declaration
+
+namespace GlobalFunctionDatabase {
+
+/**
+ * @brief Test if named function is registered to the GlobalFunctionDatabase.
+ * @return TRUE if function is registered.
+ */
+
+bool IsValid (const char* name);
+
+/**
+ * @brief Register a function definition to the GlobalFunctionDatabase.
+ * @detail The function must be defined with a unique name.
+ * @param func The function definition to register.
+ * @pre
+ *   ccs::types::GlobalFunctionDatabase::IsValid(func.name) == false
+ * @return TRUE if successful.
+ *
+ * @code
+   typedef struct __attribute__((packed)) SensorGeometryMLF {
+     ccs::types::float32 angle = 0.f;
+     ccs::types::float32 r = 0.f;
+     ccs::types::float32 z = 0.f;
+   } SensorGeometryMLF_t;
+
+   typedef struct __attribute__((packed)) BestIPWeightsComputationInput {
+     SensorGeometryMLF_t geometry;
+     ccs::types::uint8 enabled = 0; 
+   } BestIPWeightsComputationInput_t;
+
+   typedef BestIPWeightsComputationInput_t BestIPWeightsComputationInputs_t [NUMBER_OF_MLF_SENSORS_PER_IP];
+
+   bool BestIPWeightsComputation (Config_t* config, BestIPWeightsComputationInputs_t* input, BestIPWeightsComputationOutputs_t* output);
+
+   ccs::types::FunctionDefinition_t fundef;
+   ccs::HelperTools::SafeStringCopy(fundef.name, "55a0::cvvf::BestIPWeightsComputation/v0.1", ccs::types::MaxStringLength);
+   // ccs::types::AnyType instance equivalent to the structured types defined above
+   ccs::HelperTools::SafeStringCopy(fundef.input, __bestIPWeightsComputationInputs->GetName(), ccs::types::MaxStringLength);
+   ccs::HelperTools::SafeStringCopy(fundef.output, __bestIPWeightsComputationOutputs->GetName(), ccs::types::MaxStringLength);
+   ccs::HelperTools::SafeStringCopy(fundef.config, __cfg->GetName(), ccs::types::MaxStringLength);
+   fundef.function = reinterpret_cast<void*>(&BestIPWeightsComputation);
+
+   // Register function to the global database
+   bool status = ccs::types::GlobalFunctionDatabase::Register(fundef);
+   @endcode
+ */
+
+bool Register (const ccs::types::FunctionDefinition_t& func);
+
+const FunctionDefinition_t GetFunction (const char* name);
+
+// Function definition
+
+} // namespace GlobalFunctionDatabase
+
+} // namespace types
+
+} // namespace ccs
+
+#endif // _FunctionDatabase_h_ 
+

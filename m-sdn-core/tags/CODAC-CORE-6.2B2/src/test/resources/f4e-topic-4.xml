@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- Implicit size and multicast mapping -->
+<topic name="f4e-topic-4" version="1.0">
+  <attribute rank="0" name="identifier" dataType="uint64"/>
+  <attribute rank="1" name="send-time" dataType="uint64" qualifier="timestamp"/>
+  <attribute rank="2" name="recv-time" dataType="uint64"/>
+  <attribute rank="3" name="reserved" dataType="char" multiplicity="4072">H.world</attribute>
+</topic>
+

@@ -1,0 +1,324 @@
+/******************************************************************************
+* $HeadURL$
+* $Id$
+*
+* Project       : CODAC Core System
+*
+* Description   : Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*                                 CS 90 046
+*                                 13067 St. Paul-lez-Durance Cedex
+*                                 France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <memory> // std::shared_ptr, etc.
+
+// Local header files
+
+#include "BasicTypes.h" // Misc. type definition
+#include "SysTools.h" // Misc. helper functions
+
+//#define LOG_TRACE_ENABLE
+//#undef LOG_TRACE_ENABLE 
+//#define LOG_DEBUG_ENABLE
+//#undef LOG_DEBUG_ENABLE 
+#include "log-api.h" // Syslog wrapper routines
+
+#include "AnyType.h"
+
+#include "ArrayType.h"
+#include "CompoundType.h"
+#include "ScalarType.h"
+//#include "CompoundArray.h"
+//#include "ScalarArray.h"
+
+// Constants
+
+#undef LOG_ALTERN_SRC
+#define LOG_ALTERN_SRC "ccs::types"
+
+// Type definition
+
+namespace ccs {
+
+namespace types {
+
+// Global variables
+
+// Function declaration
+
+// Function definition
+  
+bool ArrayType::HasElement (const uint32 index) const
+{ 
+
+  bool status = (index < this->GetMultiplicity());
+
+  log_debug("ArrayType::HasElement('%u') - Size is '%u'", index, this->GetMultiplicity());
+
+  return status; 
+
+}
+
+std::shared_ptr<const AnyType> ArrayType::GetElementType (void) const 
+{ 
+
+  return __base; 
+
+}
+
+ArrayType* ArrayType::SetElementType (const std::shared_ptr<const AnyType>& type) 
+{ 
+
+  __base = type; 
+
+  bool status = static_cast<bool>(__base);
+
+  if (status)
+    {
+      (void)this->SetSize(__multiplicity * __base->GetSize()); 
+    }
+
+  return this; 
+
+}
+
+ArrayType* ArrayType::SetElementType (const AnyType* type) 
+{ 
+
+  __base = std::shared_ptr<const AnyType>(type);
+
+  bool status = static_cast<bool>(__base);
+
+  if (status)
+    {
+      (void)this->SetSize(__multiplicity * __base->GetSize()); 
+    }
+
+  return this; 
+
+}
+
+uint32 ArrayType::GetElementNumber (void) const { return __multiplicity; }
+
+uint32 ArrayType::GetElementOffset (const uint32 index) const 
+{ 
+
+  uint32 offset = 0u;
+
+  if (this->HasElement(index))
+    {
+      offset = index * __base->GetSize();
+    }
+
+  return offset; 
+
+}
+
+void* ArrayType::GetElementReference (const void * const ref, const uint32 index) const
+{
+
+  void* elem = NULL_PTR_CAST(void*);
+
+  if ((NULL_PTR_CAST(void*) != ref) && (index < this->GetElementNumber())) 
+    {
+      elem = const_cast<void*>(static_cast<const void*>(static_cast<const uint8_t*>(ref) + this->GetElementOffset(index)));
+    }
+
+  return elem;
+
+}
+ 
+uint32 ArrayType::GetMultiplicity (void) const { return __multiplicity; }
+
+ArrayType* ArrayType::SetMultiplicity (uint32 multiplicity) 
+{ 
+
+  __multiplicity = multiplicity;
+
+  bool status = static_cast<bool>(__base);
+
+  if (status)
+    {
+      (void)this->SetSize(__multiplicity * __base->GetSize()); 
+    }
+
+  return this; 
+
+}
+
+bool ArrayType::ToNetworkByteOrder (void * const ref) const
+{
+
+  log_trace("ArrayType::ToNetworkByteOrder - Entering method");
+
+  bool status = (NULL_PTR_CAST(void*) != ref);
+
+  for (uint32 index = 0u; ((index < this->GetElementNumber()) && status); index++)
+    {
+      void* attr = static_cast<void*>(static_cast<uint8_t*>(ref) + this->GetElementOffset(index));
+      status = __base->ToNetworkByteOrder(attr);
+    }
+
+  log_trace("ArrayType::ToNetworkByteOrder - Leaving method");
+
+  return status;
+
+}
+
+bool ArrayType::FromNetworkByteOrder (void * const ref) const
+{
+
+  log_trace("ArrayType::FromNetworkByteOrder - Entering method");
+
+  bool status = (NULL_PTR_CAST(void*) != ref);
+
+  for (uint32 index = 0u; ((index < this->GetElementNumber()) && status); index++)
+    {
+      void* attr = static_cast<void*>(static_cast<uint8_t*>(ref) + this->GetElementOffset(index));
+      status = __base->FromNetworkByteOrder(attr);
+    }
+
+  log_trace("ArrayType::FromNetworkByteOrder - Leaving method");
+
+  return status;
+
+}
+
+bool ArrayType::operator== (const ArrayType& type) const
+{
+
+  bool status = ((this->GetSize() == type.GetSize()) &&
+                 (this->GetMultiplicity() == type.GetMultiplicity()));
+
+  if (status)
+    {
+      status = (*(this->GetElementType()) == *(type.GetElementType()));
+    }
+
+  return status;
+
+}
+
+bool ArrayType::operator== (const AnyType& type) const
+{
+
+  bool status = (NULL_PTR_CAST(const ArrayType*) != dynamic_cast<const ArrayType*>(&type));
+
+  if (status)
+    {
+      const ArrayType* ref = dynamic_cast<const ArrayType*>(&type);
+
+      status = ((this->GetSize() == ref->GetSize()) &&
+                (this->GetMultiplicity() == ref->GetMultiplicity()) &&
+                (*(this->GetElementType()) == *(ref->GetElementType())));
+    }
+
+  return status;
+
+}
+
+ArrayType& ArrayType::operator= (const ArrayType& type)
+{
+
+  log_trace("ArrayType::operator= - Entering method");
+
+  if (this != &type)
+    {
+      (void)this->SetName(type.GetName());
+      (void)this->SetElementType(type.GetElementType());
+      (void)this->SetMultiplicity(type.GetMultiplicity());
+    }
+
+  log_trace("ArrayType::operator= - Leaving method");
+
+  return *this;
+
+}
+
+ArrayType::ArrayType (void) 
+{
+
+  (void)this->SetMultiplicity(0u);
+  (void)this->SetSize(0u);
+
+  return; 
+
+}
+
+ArrayType::ArrayType (const ArrayType& type) : AnyType (type.GetName()) // Copy constructor
+{
+
+  (void)this->SetElementType(type.GetElementType());
+  (void)this->SetMultiplicity(type.GetMultiplicity());
+
+  return; 
+
+}
+
+ArrayType::ArrayType (const char8 * const type, const std::shared_ptr<const AnyType>& base, const uint32 multiplicity) : AnyType (type) 
+{ 
+
+  (void)this->SetElementType(base);
+  (void)this->SetMultiplicity(multiplicity);
+
+  return; 
+
+}
+
+ArrayType::ArrayType (const char8 * const type, const AnyType * const base, const uint32 multiplicity) : AnyType (type) 
+{ 
+
+  (void)this->SetElementType(base);
+  (void)this->SetMultiplicity(multiplicity);
+
+  return; 
+
+}
+
+// v1.3.3 - Smart pointers impose to make a copy so as to avoid deleting the type when this goes out of scope
+ArrayType::ArrayType (const char8 * const type, const ArrayType& base, const uint32 multiplicity) : AnyType (type) 
+{ 
+
+  (void)this->SetElementType(std::dynamic_pointer_cast<const AnyType>(std::make_shared<const ArrayType>(base)));
+  (void)this->SetMultiplicity(multiplicity);
+
+  return; 
+
+}
+
+ArrayType::ArrayType (const char8 * const type, const CompoundType& base, const uint32 multiplicity) : AnyType (type) 
+{ 
+
+  (void)this->SetElementType(std::dynamic_pointer_cast<const AnyType>(std::make_shared<const CompoundType>(base)));
+  (void)this->SetMultiplicity(multiplicity);
+
+  return; 
+
+}
+
+ArrayType::ArrayType (const char8 * const type, const ScalarType& base, const uint32 multiplicity) : AnyType (type) 
+{ 
+
+  (void)this->SetElementType(std::dynamic_pointer_cast<const AnyType>(std::make_shared<const ScalarType>(base)));
+  (void)this->SetMultiplicity(multiplicity);
+
+  return; 
+
+}
+
+ArrayType::~ArrayType (void) {}
+
+} // namespace types
+
+} // namespace ccs

@@ -1,0 +1,22 @@
+1. Start soft IOC
+
+softIocPVA -d ./src/test/c++/v3-loader/softioc.db
+
+2. Start v3 component
+
+${CODAC_ROOT}/bin/obj-factory --file ./src/test/c++/v3-loader/55a0-v3-loader.xml
+
+3. Test with client (just RPCClient .. not specialised class yet)
+
+3.1. Read configuration
+
+./target/bin/cfg-client --service 55a0::Cfg::Interface --verbose
+
+3.2. Change configuration
+
+./target/bin/cfg-client --service 55a0::Cfg::Interface --config "[{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}}]" --verbose
+
+./target/bin/cfg-client --service 55a0::Cfg::Interface --config "[{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":2.5}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}}]" --verbose
+
+## Fail checksum due to truncated angle
+./target/bin/cfg-client --service 55a0::Cfg::Interface --config "[{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":7.5}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}}]" --verbose

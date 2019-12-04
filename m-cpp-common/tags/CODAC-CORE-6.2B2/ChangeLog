@@ -1,0 +1,197 @@
+Changes for 1.4.7:
+
+- Bug 12055 - Regression on LookUpTable::Remove.
+- Bug 12069 - ccs::HelperTools::GetProcessId is not re-entrant.
+
+Changes for 1.4.6:
+
+- Provide ccs::HelperTools::CopyOver() in AnyValueHelper.h .. used to
+  cater for unordered python PVAccess structures.
+- Fix -Wno-format imposed through including AnyTypeHelper.h.
+- Bug 12047 - Regression on type name for configuration files.
+
+Changes for 1.4.5:
+
+- Provide unit test for Hash method .. used to ensure interoperability
+  for SDN topics.
+
+Changes for 1.4.4:
+
+- Provide ccs::HelperTools::Strip() in SysTools.h.
+- HIC++v4 run over the following namespaces:
+  - ccs::HelperTools
+
+Changes for 1.4.3:
+
+- Fix bug in Base64-tests.cpp.
+- Provide ccs::HelperTools::StringCompare() in SysTools.h.
+- HIC++v4 run over the following namespaces:
+  - ccs::log
+  - ccs::types
+- Added reports:
+  - gtest
+  - lcov
+  - ldra
+
+Changes for 1.4.2:
+
+- ObjectFactory does not require class destructor ..
+  .. assuming virtual destructors and inheritance from AnyObject.
+- LookUpTable with elements in declarative order.
+- CompoundType uses LookUpTable to avoid large memory allocation for
+  attributes list.
+- HIC++v4 run over the following classes:
+  - ccs::base::Lock, AtomicLock and SemLock
+  - ccs::base::LookUpTable
+  - ccs::base::AnyObject, ObjectFactory and ObjectDatabase
+  - ccs::base::AnyThread
+- Added reports:
+  - gtest
+  - lcov
+  - ldra
+
+Changes for 1.4.1:
+
+- Explicit Terminate called in ccs::base::AnyThread::~AnyThread.
+- Do not expose data member initialisation through public header files ..
+  .. as this requires setting c++11 compilation flag.
+- Integrate LookUpTable<Type> from m-cpp-common-epics.
+
+Changes for 1.4:
+
+- Bug 11757 - Re-implement ccs::base::AnyThread.
+- Achievement .. Coverage > 95%.
+
+Changes for 1.3.6:
+
+- Change AnyType serialisation to JSON .. no need to discriminate
+  between Scalar and Compound arrays anymore.
+- Move ccs::base::AnyType to SDN core library (sole user).
+- Optional seed in CyclicRedundancyCkech.
+- Bug 10805 - Coverage supported through MVN plug-ins.
+- Bug 11846 - Duplicated symbols between ccs-core and log libraries.
+
+Changes for 1.3.5:
+
+- Bug 10920 - Interface to set socket buffer depth.
+
+Changes for 1.3.4:
+
+- Bug 11292 - Re-factor RPM to avoid EPICS-related dependencies
+  in base package.
+
+Changes for 1.3.3:
+
+- Smart pointers for ccs::types::AnyType related classes.
+- pva-record facility.
+
+Changes for 1.3.2:
+
+- Integration of ccs::types::AnyType related classes.
+
+Changes for 1.3.1:
+
+- Externalise ObjectFactoryEngine class for SUP activities.
+- Verify constness of the ccs::base::AnyType class API.
+- Bug 10862 - Boost still visible through ucast-api.
+- Bug 10902 - Deprecate AnyObject RTTI mechanism.
+
+Changes for 1.3:
+
+- Bug 10779 - Conflicting type definition.
+  Modify ./src/main/c++/include/types.h - Enforce namespace.
+- Bug 10805 - Generate coverage report as part of unit life-cycle.
+- Compile with '-Wall -Wpedantic' as per IDM_D_A2FRVX.
+- Bug 10327 - Use css::types for methods converting to/from network byte order.
+- Bug 10809 - Select publisher-side UDP port.
+- Bug 10862 - Unforseen dependency to Boost.
+
+Changes for 1.2.3:
+
+- Bug 10623 - Nasty systemd does not propagate environment variables.
+  Modify ./src/main/c++/include/tools.h - Do not assume ${HOSTNAME} exists.
+  Modify ./src/test/c++/unit/NetTools-test.cpp
+- Provide Doxygen package.
+
+Changes for 1.2.2:
+
+- Expose ObjectFactoryEngine as a library, with API callable from C (and hence Python). Methods
+  new_ObjectFactoryEngine, ObjectFactoryEngine_Load, ObjectFactoryEngine_Instantiate, etc. are
+  available.
+- Backport -std=c++11 to use boost.
+
+Changes for 1.2.1:
+
+- Provide mcast-forward program to replay MCAST traffic across VLAN where MCAST routing is not
+  available.
+- Provide automated unit tests.
+- Bug  9857 - Simple test tool re-using TCP classes to interpret SPSS frames.
+- Bug 10091 - Integrate method to retrieve process id by name for future CCS versions.
+- Bug 10091 - Integrate method to compute process uptime for future CCS versions.
+- Bug 10103 - Test for NULL buffer in ccs::mcast::Messenger::Receive method.
+- Bug 10163 - Log verbosity.
+- Bug 10327 - Provide methods to deal with network byte order.
+
+Changes for 1.2:
+
+- Provide SquareRoot<Type> and Hash<Type> methods.
+- Provide Statistics<Type> class definition.
+- Re-design AnyObject class and derived entities:
+  - Introduce C++ RTTI in lieu of own type identification mechanism to better support multiple-
+    inheritance between classes.
+  - Introduce CfgableObject and MsgableObject interface classes.
+  - Introduce mcast and ucast UDP and TCP communication classes.
+  - Introduce ObjectFactoryEngine as MsgableObject with ucast networked messaging interface.
+- Provide Lock (interface), AtomicLock (spinwait and atomic operations) and SemLock (semaphore)
+  class definition.
+
+Changes for 1.1.8:
+
+- The ObjectDatabase::Register method inserts references at the first available location in the
+  table (else should operate as a stack). The advantage is that resources do not get consumed
+  unnecessarilly. The issue is with previously stored identifiers which may point to different
+  instances as objects get created and terminated within the scope of a single program.
+- Clean-up header dependencies, e.g. unnecessary 'tools.h' though 'any-type.h'.
+
+Changes for 1.1.7:
+
+- Use callback mechanism behind log wrappers to enable using log-lib throughout the program
+  in case the library is loaded with it. As such, other libraries can make use of the log_level
+  macros and have support for log-lib without compile-time dependency to it.
+- Added log_alert macro for homogeneity with the logging library.
+- MARTe2 Integration - Support 'float32' and 'float64' type names in ccs::base::AnyType.
+
+Changes for 1.1.6:
+
+- Use callback mechanism behind log wrappers.
+- Bug 8722 - Added net_is_interface_valid(char*) to test validity of any interface defined by
+             name. The routine is using ethtool to check existence of a MAC address.
+
+Changes for 1.1.5:
+
+- Remove size limit to ccs::base::AnyType.
+- Maintain limit to supported number of attributes in ccs::base::AnyType (required due to
+  implementation using LUTable class instantiation)
+
+Changes for 1.1.4:
+
+- Introduce ccs::base namespace for classes which are meant to be extended in other components.
+
+Changes for 1.1.3:
+
+- AnyThread::SetSynchronous(false) has the thread sleep-waiting on atomic trigger.
+  Use AnyThread::SetAccuracy() to define the sleep period between tests, 0 to spin-wait.
+  Use AnyThread::Trigger() to cause thread callback invocation.
+- Added <base64.h> Base-64 codec methods.
+
+Changes for 1.1.2:
+
+- AnyThread::Launch() returns after the preamble callback has been called, if any.
+
+Changes for 1.1.1:
+
+- Added <crc.h> CRC-32 computation.
+- Added <hash.h> String hashing functions.
+- Added <lock.h> AtomicLock class definition.
+- Fixed <lu-table.h> comparing keywords using strncmp and strlen of stored keys.
+

@@ -1,0 +1,13 @@
+WishList for future versions:
+
+- Asynchronous sdn::core::Publisher to publish as well upon calling the
+  sdn::core::Publisher_Asyn::Publish method.
+- Events through ping/echo on a topic lifecycle channel.
+- Factory and messageable participants.
+- sdn::Topic instantiation from recovered discovery message.
+- sdn::ucast::Participant with composite pattern (ECRH Use Case).
+- sdn::disc::Subscriber with configurable callback mechanism.
+- Management of discovery query message.
+- Compatibility with previous discovery protocol through <alternative>.
+- sdn::Topic definition through XML without dependency to libxml2.
+

@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+
+<object application="codac:obj-factory" name="gbs-tcn-health" xmlns="urn:x-iter:plant:2015" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2015 Plant.xsd">
+  <libraries>
+    <!-- Load basic library -->
+    <library>libsup-config.so</library> <!-- CFG related classes -->
+    <library>lib55a0-config.so</library>
+  </libraries>
+  <instances>
+    <instance name="gtdb" type="sup::core::MsgableTypeDatabase">
+      <parameter name="verbose">true</parameter>
+      <message>
+Register('
+{"type":"55a0::FloatArray_t/v1.0",
+ "multiplicity":32,
+ "element":{"type":"float32"}
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::Config_t/v1.0",
+ "attributes":[{"M":{"type":"55a0::FloatArray_t/v1.0"}},
+               {"Y0":{"type":"55a0::FloatArray_t/v1.0"}},
+               {"WOTime":{"type":"uint64"}},
+               {"EOTime":{"type":"uint64"}}
+              ]
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::FPGA::Config_t/v1.0",
+ "attributes":[{"oper":{"type":"uint32"}},
+               {"hash":{"type":"uint32"}},
+               {"config":{"type":"55a0::Config_t/v1.0"}}
+              ]
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::FPGA::Status_t/v1.0",
+ "attributes":[{"seed":{"type":"uint32"}},
+               {"hash":{"type":"uint32"}},
+               {"status":{"type":"55a0::Config_t/v1.0"}}
+              ]
+}
+')
+      </message>
+    </instance>
+    <instance name="55a0-hasher" type="55a0::ConfigurationHasher">
+      <parameter name="verbose">true</parameter>
+      <parameter name="target">fpga0</parameter> <!-- Named dataset -->
+      <parameter name="key">12345678</parameter> <!-- CRC polynomial -->
+    </instance>
+    <instance name="fpga0-config" type="55a0::Publisher">
+      <parameter name="verbose">true</parameter>
+      <parameter name="type">55a0::FPGA::Config_t/v1.0</parameter>
+      <parameter name="name">55A0FPGA0Config</parameter>
+      <parameter name="interface">lo</parameter>
+      <message>Configure</message>
+    </instance>
+    <instance name="fpga0-status" type="55a0::Subscriber">
+      <parameter name="verbose">true</parameter>
+      <parameter name="type">55a0::FPGA::Status_t/v1.0</parameter>
+      <parameter name="name">55A0FPGA0Status</parameter>
+      <parameter name="interface">lo</parameter>
+      <message>Configure</message>
+    </instance>
+    <instance name="55a0-adapter" type="55a0::ConfigurationHandler">
+      <parameter name="verbose">true</parameter>
+      <parameter name="target">fpga0</parameter> <!-- Named dataset -->
+      <parameter name="config">fpga0-config</parameter>
+      <parameter name="status">fpga0-status</parameter>
+      <parameter name="ppm-service">rpc@cis-ppm</parameter>
+    </instance>
+    <instance name="55a0-service" type="sup::core::ConfigurationService">
+      <parameter name="verbose">true</parameter>
+      <parameter name="service">55a0::Cfg::Interface</parameter>
+      <parameter name="hasher">55a0-hasher</parameter>
+      <parameter name="handler">55a0-adapter</parameter>
+    </instance>
+  </instances>
+</object>

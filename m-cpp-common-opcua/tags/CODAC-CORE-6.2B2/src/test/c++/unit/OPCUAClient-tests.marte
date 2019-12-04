@@ -1,0 +1,250 @@
++LoggerService = {   
+    Class = LoggerService
+    CPUs = 0x1
+    StackSize = 32768 
+    NumberOfLogPages = 128 
+    +ConLogger = {
+        Class = ConsoleLogger
+        Format = "EtOoFmC"
+        PrintKeys = 1
+    }
+    +SysLogger = {
+        Class = SysLogger
+        Format = "EtOoFmC"
+        PrintKeys = 1
+        Ident = "ITER"
+    }
+}
++ApplicationTypes = {
+    Class = ReferenceContainer
+    +Scalars_t = {
+        Class = IntrospectionStructure
+        bool = { // 3002
+            Type = uint8
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        int8 = { // 3003
+            Type = int8
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        uint8 = { // 3004
+            Type = uint8
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        int16 = {
+            Type = int16
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        uint16 = {
+            Type = uint16
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        int32 = {
+            Type = int32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        uint32 = {
+            Type = uint32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        int64 = {
+            Type = int64
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        uint64 = {
+            Type = uint64
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        float32 = {
+            Type = float32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        float64 = {
+            Type = float64
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+    }   
+    +Geometry_t = {
+        Class = IntrospectionStructure
+        r = {
+            Type = float32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        z = {
+            Type = float32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        angle = {
+            Type = float32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+    }
+    +Sensor_t = {
+        Class = IntrospectionStructure
+        enabled = {
+            Type = uint8
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        geometry = {
+            Type = Geometry_t
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+    }   
+    +Sensors_t = {
+        Class = IntrospectionStructure
+        s0 = {
+            Type = Sensor_t
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        s1 = {
+            Type = Sensor_t
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        s2 = {
+            Type = Sensor_t
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        s3 = {
+            Type = Sensor_t
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+    }   
+}
++OPCUAServer = {
+    Class = OPCUA::OPCUAServer
+    Port = 4840
+    CPUMask = 0x3
+    AddressSpace = {
+        CurrentTime = {
+            Type = uint64
+        }
+        Scalars = {
+            Type = Scalars_t
+        }
+        Data = {
+            Type = Sensors_t
+        }
+    }
+}
+$Test = {
+    Class = RealTimeApplication
+    +Functions = {
+        Class = ReferenceContainer
+        +Tick = {
+            Class = IOGAM
+            InputSignals = {
+                Time = {                	
+                    DataSource = Timer
+                    Type = uint32
+                    Frequency = 10
+                }
+            }
+            OutputSignals = {
+                RelativeTime = {                	
+                    DataSource = DDB
+                    Type = uint32
+                }
+            }
+        }
+        +CurrTime = {
+            Class = IOExt::SystemClockGAM
+            OutputSignals = {
+                AbsoluteTime = {                	
+                    DataSource = DDB
+                    Type = uint64
+                }
+            }
+        }
+        +DDB2OPC = {
+            Class = IOGAM
+            InputSignals = {
+                AbsoluteTime = {                	
+                    DataSource = DDB
+                    Type = uint64
+                }
+            }
+            OutputSignals = {
+                AbsoluteTime = {                	
+                    DataSource = OPCUAOutput
+                    Type = uint64
+                    Alias = "CurrentTime"
+                }
+            }
+        }
+    }
+    +Data = {
+        Class = ReferenceContainer
+        DefaultDataSource = DDB
+        +DDB = {
+            Class = GAMDataSource
+        }
+        +LoggerDataSource = {
+            Class = LoggerDataSource
+        }
+        +Timer = {
+            Class = LinuxTimer
+            Signals = {
+        	Locked = 1
+                Counter = {
+                    Type = uint32
+                }
+                Time = {
+                    Type = uint32 // Microsec since application start
+                }
+            }
+        }
+        +Timings = {
+            Class = TimingDataSource
+        }
+        +OPCUAOutput = {
+            Class = OPCUADataSource::OPCUADSOutput
+            Address = "opc.tcp://localhost.localdomain:4840"
+            Signals = {
+        	Locked = 1
+                CurrentTime = {
+                    Type = uint64
+                    NamespaceIndex = 1
+                    Path = "CurrentTime"
+                }
+            }
+        }
+    }
+    +States = {
+        Class = ReferenceContainer
+        +Running = {
+            Class = RealTimeState
+            +Threads = {
+                Class = ReferenceContainer
+                +Thread1 = {
+                    Class = RealTimeThread
+                    CPUs = 0x3
+                    Functions = {Tick CurrTime DDB2OPC}
+                }
+            }
+        }
+    }
+    +Scheduler = {
+        Class = GAMScheduler
+        TimingDataSource = Timings
+    }
+}

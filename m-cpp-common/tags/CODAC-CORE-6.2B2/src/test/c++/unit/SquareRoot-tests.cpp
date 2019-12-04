@@ -1,0 +1,135 @@
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-cpp-common/tags/CODAC-CORE-6.2B2/src/test/c++/unit/SquareRoot-tests.cpp $
+* $Id: SquareRoot-tests.cpp 100703 2019-07-11 15:23:56Z bauvirb $
+*
+* Project	: CODAC Core System
+*
+* Description	: Unit test code
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*				  CS 90 046
+*				  13067 St. Paul-lez-Durance Cedex
+*				  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <gtest/gtest.h> // Google test framework
+
+// Local header files
+
+#include "types.h" // Misc. type definition
+#include "tools.h" // Misc. helper functions
+
+#include "log-wrap.h" // Syslog wrapper routines
+
+#include "SquareRoot.h"
+
+// Constants
+
+// Type definition
+
+// Global variables
+
+// Function declaration
+
+// Function definition
+
+TEST(SquareRoot_Test, UnsignedInteger64)
+{
+
+  using namespace ccs::types;
+
+  bool ret = true;
+
+  if (ret)
+    {
+      uint64 result = 0ul;
+      uint64 square = 0ul;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      uint64 result = 1ul;
+      uint64 square = 1ul;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      uint64 result = 8ul;
+      uint64 square = result * result;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      uint64 result = 1011ul;
+      uint64 square = result * result;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      uint64 result = 123456789ul;
+      uint64 square = result * result;
+      ret = (SquareRoot(square) == result);
+    }
+
+
+  ASSERT_EQ(true, ret);
+}
+
+TEST(SquareRoot_Test, Float64)
+{
+  using namespace ccs::types;
+
+  bool ret = true;
+
+  if (ret)
+    {
+      float64 result = 0.0;
+      float64 square = 0.0;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      float64 result = 1.0;
+      float64 square = 1.0;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      float64 result = 8.0;
+      float64 square = result * result;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      float64 result = 0.101;
+      float64 square = result * result;
+      ret = (SquareRoot(square) == result);
+    }
+
+  if (ret)
+    {
+      float64 result = 3.16228;
+      float64 square = 10.0;
+      float64 diff = SquareRoot(square) - result;
+      ret = ((diff > -0.00001) && (diff < +0.00001));
+    }
+
+  ASSERT_EQ(true, ret);
+}
+

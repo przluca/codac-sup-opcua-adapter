@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ $HeadURL$
+ $Id$
+
+ Project       : CODAC Core System - SDN core library - Regression tests (see https://bugzilla.iter.org/codac/show_bug.cgi?id=9225)
+ Description   : SDN topic definition file
+ Authors       : B.Bauvir (IO)
+ 
+ Copyright (c) : 2010-2019 ITER Organization,
+                 CS 90 046
+                 13067 St. Paul-lez-Durance Cedex
+                 France
+
+ This file is part of ITER CODAC software.
+ For the terms and conditions of redistribution or use of this software
+ refer to the file ITER-LICENSE.TXT located in the top level directory
+ of the distribution package.
+-->
+<!-- Implicit payload size and multicast mapping -->
+<topic name="RTDN_SDN_FELIX" description="Topic definition file (see https://bugzilla.iter.org/codac/show_bug.cgi?id=9225)" size="15244" version="0" uid="0" mapping="239.0.253.79:10688">
+  <attribute name="sequenceNo" dataType="uint32_t"/>
+  <attribute name="sampletime" dataType="uint32_t" unit="ms - millisecond" qualifier="timestamp"/>
+  <attribute name="fluxboundary" dataType="float"/>
+  <attribute name="flux" dataType="float" multiplicity="3807"/>
+  <attribute name="felixPkt_000000000" dataType="uint32_t"/>
+</topic>

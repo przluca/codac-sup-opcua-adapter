@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<object application="codac:obj-factory" name="obj-factory" xmlns="urn:x-iter:plant:2014" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2014 Plant.xsd">
+  <libraries>
+    <!-- Load basic library -->
+    <library>libtoo.so</library>
+  </libraries>
+  <instances>
+    <instance name="Obj_0" type="AnyObject" />
+    <instance name="Obj_1" type="AnyObject_Cfgable">
+      <parameter name="value">1</parameter>
+    </instance>
+    <instance name="Obj_2" type="AnyObject_Msgable">
+      <message>Initialise</message>
+      <message>Start</message>
+    </instance>
+  </instances>
+</object>

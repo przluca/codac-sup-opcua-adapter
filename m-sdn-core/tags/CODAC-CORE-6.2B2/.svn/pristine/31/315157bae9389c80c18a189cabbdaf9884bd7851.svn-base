@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!-- Implicit size and multicast mapping -->
+<topic name="marte-sdn-thin" version="1.0">
+  <attribute rank="0" name="timestamp" dataType="uint32"/>
+  <attribute rank="1" name="counter" dataType="uint32"/>
+  <attribute rank="2" name="float" dataType="float"/>
+</topic>
+

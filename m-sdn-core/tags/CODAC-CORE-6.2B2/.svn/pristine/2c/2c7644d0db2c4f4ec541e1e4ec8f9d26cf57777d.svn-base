@@ -1,0 +1,154 @@
+Changes for 1.3.1:
+
+- Bug 12056 - Configure interface moved to systemd service.
+  Change ./src/main/scripts/sdn-configure
+
+Changes for 1.3:
+
+- Include ccs::ucast and ccs::mcast namespaces in sdn-core library.
+
+Changes for 1.2.3:
+
+- Bug 11611 - Logging verbosity is too high for AsynchronousSubscriber.
+
+Changes for 1.2.2:
+
+- Bug 10920 - Interface to set RECV/SEND buffer depth as number of topic
+  instances.
+- Bug 11538 - Locate topic definition files using SDD convention.
+
+hanges for 1.2.1:
+
+- Bug 10852 - Topic API extended for description attribute.
+- Bug 10852 - Change of API where the client specifies the description
+  string length.
+- Bug 10905 - Instantiate topic from XML content.
+- SDN_CORE_VERSION environment variable available through API.
+- GTests Makefile changed to adapt to Ubuntu linker.
+
+Changes for 1.2:
+
+- Bug 10327 - Select byte order for messaging over the network.
+- Bug 10809 - Select publisher-side UDP port.
+- SDN_CORE_VERSION environment variable available through the devel package.
+
+Changes for 1.1.1:
+
+- Bug 10161 - Automated unit and regression tests as part of unit life-cycle.
+- Bug 10687 - Asynchronous subscribers and multiple interfaces support.
+- Bug 10805 - Generate coverage report as part of unit life-cycle.
+- Provide inline source code and usage documentation.
+- Compile with '-Wall -pedantic' as per IDM_D_A2FRVX.
+
+Changes for 1.1 :
+
+- Provide inline source code and usage documentation.
+- Externalize generic base, mcast and ucast participants.
+- Introduce compliance to SDN discovery schema v1.0.
+- Configure network device upon calling codac-configure.
+- Remove dependency to sdn-topics.
+- Bug  9354 - Create automated regression test.
+- Bug  9524 - Externalize XML support in static inline routines.
+- Bug  9729 - Provide method to generate MCAST mapping from name.
+- Bug 10153 - 9524 caused regression on 9290.
+- Bug 10182 - 9524 caused regression on generation of MCAST mapping from name.
+- Bug 10266 - Provide default discovery message size at instantiation.
+- Bug 10327 - Deleted - Assume network byte ordering of the header/footer.
+- Bug 10327 - Detect publisher byte ordering and provide sdn::Header API.
+- Bug 10327 - Declare byte ordering as part of the SDN discovery message.
+- Bug 10528 - sdn::TopicHelper methods should enforce topic name on the
+  interface.
+- Bug 10574 - codac-configure tries and configure interface.
+
+Changes for 1.0.12 (MARTe2 Integration):
+
+- Clean-up header dependencies: sdn-api.h, sdn-topic.h.
+- Create MARTe-ping and MARTe-echo programs.
+
+Changes for 1.0.11 (MARTe2 Integration):
+
+- Disable packet footer as the implementation is not robust.
+- Fix constness of some attributes in sdn-api.h.
+
+Changes for 1.0.10 (MARTe2 Integration):
+
+- Use virtual destructors, where appropriate, to ensure the right destructor is invoked event
+  manipulating instances through the base class.
+- Bug 9397 - Unicast participants should be deployable on the same host (test purposes). Note
+  that the implementation binds the socket to the named interface and, as such, only the latest
+  bind will receive the message; this implies that the sdn::ucast::Subscriber is configured
+  after the sdn::ucast::Publisher.
+
+Changes for 1.0.9 (MARTe2 Integration):
+
+- Added development-specific environment variables SDN_CORE_INCLUDE_DIR and
+  SDN_CORE_LIBRARY_DIR.
+- Removed SDNPublisher macro from <sdn-api.h>.
+- sdn::Topic API extended to fully support topic definition (use case being that of
+  an external application configuration parser).
+- The topic metadata could be instantiated  with sdn::Topic_InitializeMetadata using topic
+  name of the form 'sdn://<address>:<port>/<name>', e.g. 'sdn://127.0.0.1:60000/MyTopic'.
+- Similarly, explicit destination address can be specified with sdn::Topic_InitializeMetadata
+  using the form '<address>:<port>', e.g. '127.0.0.1:60000'.
+
+Changes for 1.0.8:
+
+- Ported to cpp-common 1.1.7 to support changeable logging callback and usage of log-lib
+  in case a program links to both sdn-core and log-lib.
+- Bug 9354 - Recover ability to create sdn::Participant in absence of topic definition
+	     XML file using explicit topic name and size.
+
+Changes for 1.0.7:
+
+- Removed sdn::mcast and sdn::ucast composite and asynchronous participants.
+- sdn::base::Participant as common interface to sdn::mcast or sdn::ucast.
+- sdn::core::Participants instantiate sdn::mcast or sdn::ucast based on address range.
+- Bug 9249 - Introduce checks on attributes and payload limits.
+- Bug 9290 - Rank mismatch between attribute list and extended qualifiers, units, etc.
+
+Changes for 1.0.6:
+
+- Increase maximum topic size to 64kB.
+- Remove dependency to sdn-header and sdn-footer XML datatype definition file
+  to allow for opeation on machines where SDN_TOPIC_PATH or CODAC_CONF is left
+  undefined.
+- sdn::core::Subscriber topic validity checks amended to allow for disabling topic version
+  or UID tests at Subscriber level.
+- sdn::core::Participants with callback support as part of message handling.
+- sdn::Participant inherit from sdn::core::Participants and notify
+  sdn::disc::Publisher to gratuitously emit join/announce/leave messages.
+- Introduction of sdn-core.h and sdn-api.h public header files and PIMPL design
+  pattern so as to avoid exposing internal structure through the public header files.
+- Bug 7919 - Test validity of SDN_INTERFACE_NAME in sdn::core::Participant::SetInterface()
+             and sdn::core::Participant::Configure().
+- Bug 8722 - Added sdn_is_interface_valid() API to test validity of SDN_INTERFACE_NAME or
+             and net_is_interface_valid(char*) for any interface defined by name.
+- Bug 9225 - Topic mappings to ports below 1024 require superuser priviledges.
+
+Changes for 1.0.5:
+
+- sdn::disc::Participants introduced.
+
+Changes for 1.0.4:
+
+- sdn::core::Participants registered to object database to support dynamic discovery.
+- sdn::Topic allows for providing explicit UID through XML topic definition file.
+- sdn::Topic API extended to fully support topic definition (use case being that of
+  an external application configuration parser).
+
+Changes for 1.0.3:
+
+- Redefine namespaces to sdn::base, sdn::mcast and sdn::core.
+- Bug 8874 - SDN_TOPIC_PATH variable definition included in this unit.
+- sdn::Topic API to declare attributes dynamically (proxi to base::AnyType API).
+
+Changes for 1.0.2:
+
+- mcast::Participant re-designed for explicit Open/Close virtual methods.
+- mcast::Participant re-designed to support composite pattern.
+- mcast::Participant re-designed to support asynchronous pattern.
+
+Changes for 1.0.1:
+
+- Bug 8874 - SDN_TOPIC_PATH variable does not allow for values above 64 characters.
+

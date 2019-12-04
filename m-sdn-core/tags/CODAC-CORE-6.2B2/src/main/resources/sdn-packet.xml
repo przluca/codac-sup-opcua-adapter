@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<!-- SDN message definition -->
+<dataType name="sdn-packet" version="1.0">
+  <attribute rank="0" name="header" dataType="sdn-header"/>
+  <attribute rank="1" name="corpus" dataType="undefined"/>
+  <attribute rank="2" name="footer" dataType="sdn-footer"/>
+</dataType>
+

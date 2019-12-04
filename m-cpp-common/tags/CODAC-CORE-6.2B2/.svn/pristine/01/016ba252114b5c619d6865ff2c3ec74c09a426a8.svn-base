@@ -1,0 +1,218 @@
+/******************************************************************************
+* $HeadURL$
+* $Id$
+*
+* Project       : CODAC Core System
+*
+* Description   : Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*                                 CS 90 046
+*                                 13067 St. Paul-lez-Durance Cedex
+*                                 France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <memory> // std::shared_ptr, etc.
+
+// Local header files
+
+#include "BasicTypes.h" // Misc. type definition
+#include "SysTools.h" // Misc. helper functions
+
+#include "NetTools.h" 
+
+//#define LOG_TRACE_ENABLE
+//#undef LOG_TRACE_ENABLE 
+//#define LOG_DEBUG_ENABLE
+//#undef LOG_DEBUG_ENABLE 
+#include "log-api.h" // Syslog wrapper routines
+
+#include "AnyType.h"
+#include "ScalarType.h"
+
+#include "AnyTypeHelper.h"
+
+// Constants
+
+#ifdef LOG_TRACE_ENABLE
+#undef log_trace
+#define log_trace(arg_msg...) { fprintf(stdout, arg_msg); }
+#endif
+
+#ifdef LOG_DEBUG_ENABLE
+#undef log_debug
+#define log_debug(arg_msg...) { fprintf(stdout, arg_msg); }
+#endif
+
+#undef LOG_ALTERN_SRC
+#define LOG_ALTERN_SRC "ccs::types"
+
+// Type definition
+
+namespace ccs {
+
+namespace types {
+
+// Global variables
+
+const std::shared_ptr<const ScalarTypeT<boolean>> Boolean (new (std::nothrow) ScalarTypeT<boolean>);
+const std::shared_ptr<const ScalarTypeT<char8>> Character8 (new (std::nothrow) ScalarTypeT<char8>);
+const std::shared_ptr<const ScalarTypeT<int8>> SignedInteger8 (new (std::nothrow) ScalarTypeT<int8>);
+const std::shared_ptr<const ScalarTypeT<uint8>> UnsignedInteger8 (new (std::nothrow) ScalarTypeT<uint8>);
+const std::shared_ptr<const ScalarTypeT<int16>> SignedInteger16 (new (std::nothrow) ScalarTypeT<int16>);
+const std::shared_ptr<const ScalarTypeT<uint16>> UnsignedInteger16 (new (std::nothrow) ScalarTypeT<uint16>);
+const std::shared_ptr<const ScalarTypeT<int32>> SignedInteger32 (new (std::nothrow) ScalarTypeT<int32>);
+const std::shared_ptr<const ScalarTypeT<uint32>> UnsignedInteger32 (new (std::nothrow) ScalarTypeT<uint32>);
+const std::shared_ptr<const ScalarTypeT<int64>> SignedInteger64 (new (std::nothrow) ScalarTypeT<int64>);
+const std::shared_ptr<const ScalarTypeT<uint64>> UnsignedInteger64 (new (std::nothrow) ScalarTypeT<uint64>);
+const std::shared_ptr<const ScalarTypeT<float32>> Float32 (new (std::nothrow) ScalarTypeT<float32>);
+const std::shared_ptr<const ScalarTypeT<float64>> Float64 (new (std::nothrow) ScalarTypeT<float64>);
+const std::shared_ptr<const ScalarTypeT<string>> String (new (std::nothrow) ScalarTypeT<string>);
+
+// Function declaration
+
+// Function definition
+
+bool ScalarType::ToNetworkByteOrder (void * const ref) const // In-place conversion
+{
+
+  log_trace("ScalarType::ToNetworkByteOrder - Entering method");
+
+  bool status = (NULL_PTR_CAST(void*) != ref);
+
+  if (status)
+    {
+      if (this->GetSize() == 1u)
+        {
+          // Do nothing
+        }
+      else if (this->GetSize() == 2u)
+        {
+          uint16 value = ccs::HelperTools::ToNetworkByteOrder(*(static_cast<uint16*>(ref)));
+          *(static_cast<uint16*>(ref)) = value;
+        }
+      else if (this->GetSize() == 4u)
+        {
+          uint32 value = ccs::HelperTools::ToNetworkByteOrder(*(static_cast<uint32*>(ref)));
+          *(static_cast<uint32*>(ref)) = value;
+        }
+      else if (this->GetSize() == 8u)
+        {
+          uint64 value = ccs::HelperTools::ToNetworkByteOrder(*(static_cast<uint64*>(ref)));
+          *(static_cast<uint64*>(ref)) = value;
+        }
+      else
+        {
+          status = false;
+        }
+     }
+
+  log_trace("ScalarType::ToNetworkByteOrder - Leaving method");
+
+  return status;
+
+}
+
+bool ScalarType::FromNetworkByteOrder (void * const ref) const // In-place conversion
+{
+
+  log_trace("ScalarType::FromNetworkByteOrder - Entering method");
+
+  bool status = (NULL_PTR_CAST(void*) != ref);
+
+  if (status)
+    {
+      if (this->GetSize() == 1u)
+        {
+          // Do nothing
+        }
+      else if (this->GetSize() == 2u)
+        {
+          uint16 value = ccs::HelperTools::FromNetworkByteOrder(*(static_cast<uint16*>(ref)));
+          *(static_cast<uint16*>(ref)) = value;
+        }
+      else if (this->GetSize() == 4u)
+        {
+          uint32 value = ccs::HelperTools::FromNetworkByteOrder(*(static_cast<uint32*>(ref)));
+          *(static_cast<uint32*>(ref)) = value;
+        }
+      else if (this->GetSize() == 8u)
+        {
+          uint64 value = ccs::HelperTools::FromNetworkByteOrder(*(static_cast<uint64*>(ref)));
+          *(static_cast<uint64*>(ref)) = value;
+        }
+      else
+        {
+          status = false;
+        }
+     }
+
+  log_trace("ScalarType::FromNetworkByteOrder - Leaving method");
+
+  return status;
+
+}
+
+bool ScalarType::operator== (const ScalarType& type) const
+{
+
+  log_trace("bool ScalarType::operator== - Entering method");
+
+  bool status = (this->GetSize() == type.GetSize());
+
+  if (status)
+    {
+      status = ccs::HelperTools::StringCompare(this->GetName(), type.GetName());
+    }
+
+  log_trace("bool ScalarType::operator== - Leaving method");
+
+  return status;
+
+}
+
+bool ScalarType::operator== (const AnyType& type) const
+{
+
+  log_trace("bool ScalarType::operator== - Entering method");
+
+  bool status = ccs::HelperTools::Is<ScalarType>(&type);
+
+  if (status)
+    {
+      status = (this->GetSize() == type.GetSize());
+    }
+
+  if (status)
+    {
+      status = ccs::HelperTools::StringCompare(this->GetName(), type.GetName());
+    }
+
+  log_trace("bool ScalarType::operator== - Leaving method");
+
+  return status;
+
+}
+
+ScalarType::ScalarType (void) : AnyType () {}
+ScalarType::ScalarType (const char8 * const type, const uint32 size) : AnyType (type, size) {}
+ScalarType::ScalarType (const ScalarType& type) : AnyType ()
+{
+
+  (void)this->SetName(type.GetName());
+  (void)this->SetSize(type.GetSize());
+
+}
+
+} // namespace types
+
+} // namespace ccs

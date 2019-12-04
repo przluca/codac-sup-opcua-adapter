@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- SDN message footer definition -->
+<dataType name="sdn-footer" version="1.0" size="8">
+  <!-- SDN footer UID -->
+  <attribute rank="0" name="footer_uid" dataType="char" multiplicity="8">SDNv2.x</attribute> <!-- Immutable -->
+  <!-- SDN footer size - Allows for interoperability across versions -->
+  <attribute rank="1" name="footer_size" dataType="uint32">20</attribute>
+  <!-- SDN source UID - Hash key to identify topic source -->
+  <attribute rank="2" name="source_uid" dataType="uint32"/>
+  <!-- SDN topic CRC - Allows for detecting data corruption -->
+  <attribute rank="3" name="topic_crc" dataType="uint32"/>
+</dataType>
+

@@ -1,0 +1,33 @@
+CONFIG_FILE="/etc/codac/networks"
+
+# Bug 12056 - Configure interface moved to systemd service
+configure_interface=false
+
+# Bug 8268 - Change options name according to JQ74SP v1.1
+function configure {
+
+    local setting=$1
+    local value=$2
+    local changed=false
+
+    log-msg info "sdn-configure - Setting '${setting}' with value '${value}'"
+
+    case "${setting}" in
+
+    'codac_sdn_dev' | 'sdn_interface')
+        set_variable "${CONFIG_FILE}" "SDN_DEVICE" ${value:+"${value}"} && changed=true
+	;;
+    *)
+	log-msg error "sdn-configure - Unsupported setting '${setting}'"
+	;;
+	
+    esac
+
+    $changed || return 1
+
+}
+
+# Variable name imposed with /etc/dhcp/dhclient.conf
+register_setting "codac_sdn_dev" "SDN network interface device" configure
+# Duplicate setting for convenience
+register_setting "sdn_interface" "SDN network interface device (alias for codac_sdn_dev)" configure

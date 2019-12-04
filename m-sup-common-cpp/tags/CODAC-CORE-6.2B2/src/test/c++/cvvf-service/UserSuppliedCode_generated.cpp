@@ -1,0 +1,259 @@
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-sup-common-cpp/tags/CODAC-CORE-6.2B2/src/test/c++/cvvf-service/UserSuppliedCode_generated.cpp $
+* $Id: UserSuppliedCode_generated.cpp 99275 2019-04-25 06:34:12Z bauvirb $
+*
+* Project	: CODAC Core System
+*
+* Description	: Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*				  CS 90 046
+*				  13067 St. Paul-lez-Durance Cedex
+*				  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <common/BasicTypes.h> // Misc. type definition
+
+#include <common/SysTools.h> // ccs::HelperTools::SafeStringCopy, etc.
+#include <common/log-api.h> // Logging helper routines
+
+#include <common/AnyTypeDatabase.h>
+//#include <common/FunctionDatabase.h>
+
+#include <common/AnyTypeHelper.h>
+
+// Local header files
+
+#include "FunctionDatabase.h"
+#include "UserSuppliedCode.h"
+
+// Constants
+
+#undef LOG_ALTERN_SRC
+#define LOG_ALTERN_SRC "55a0::cvvf"
+
+// Type definition
+
+namespace _55a0 {
+
+namespace cvvf {
+
+// Function declaration
+
+bool Initialise (void);
+
+// Global variables
+
+static bool __init = Initialise();
+
+// Function definition
+
+bool Initialise (void)
+{
+
+  bool status = true;
+
+  std::shared_ptr<ccs::types::CompoundType> __cfg;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPSensorsSelectorInput;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPValidateSensorsInput;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPWeightsComputationInputs;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPWeightsComputationOutputs;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeSensorsErrorsInputData;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeSensorsErrorsInput;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeSensorsErrorsOutputData;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeSensorsErrorsOutput;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeIPInput;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeIPOutput;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPValidateWeightsInputs;
+  std::shared_ptr<ccs::types::CompoundType> __bestIPComputeIPErrorsOutputs;
+
+  // Declare application types
+  if (status)
+    {
+      __cfg = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::Config_t/v1.0"))
+							->AddAttribute<ccs::types::uint8>("ignored"));
+
+      std::shared_ptr<ccs::types::CompoundType> __geo ((new (std::nothrow) ccs::types::CompoundType ("55a0::types::SensorGeometryMLF_t/v1.0"))
+						       ->AddAttribute<ccs::types::float32>("Angle")
+						       ->AddAttribute<ccs::types::float32>("R")
+						       ->AddAttribute<ccs::types::float32>("Z"));
+
+      std::shared_ptr<ccs::types::CompoundType> __info ((new (std::nothrow) ccs::types::CompoundType ("55a0::types::SensorInformationMLF_t/v1.0"))
+						       ->AddAttribute("Geometry", __geo)
+						       ->AddAttribute<ccs::types::uint32>("Sector")
+							   ->AddAttribute<ccs::types::string>("Name"));
+
+      std::shared_ptr<ccs::types::CompoundType> __wcompin ((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPWeightsComputationInput_t/v1.0"))
+						       ->AddAttribute("Geometry", __geo)
+						       ->AddAttribute<ccs::types::uint8>("Enabled"));
+
+      std::shared_ptr<ccs::types::CompoundType> __infos ((new (std::nothrow) ccs::types::CompoundType ("55a0::types::SensorsInformationMLF_t/v1.0"))
+							    ->AddAttribute("Sensors", ccs::HelperTools::NewArrayType("55a0::types::SensorInformationMLFArray_t/v1.0", __info, NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+
+      __bestIPComputeSensorsErrorsInputData = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType     ("55a0::types::BestIPComputeSensorsErrorsInputData_t/v1.0"))
+                                ->AddAttribute("Data", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeSensorsErrorsInputDataArray_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR * NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+      __bestIPComputeSensorsErrorsInput = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType     ("55a0::types::BestIPComputeSensorsErrorsInput_t/v1.0"))
+                                ->AddAttribute("SectorIdx", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeSensorsErrorsInputArray_t/v1.0", __bestIPComputeSensorsErrorsInputData, NUMBER_OF_SECTORS)));
+
+      __bestIPComputeSensorsErrorsOutputData = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType     ("55a0::types::BestIPComputeSensorsErrorsOutputData_t/v1.0"))
+                                ->AddAttribute("Error", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeSensorsErrorsOutputDataArray_t/v1.0", ccs::types::Float32, NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+      __bestIPComputeSensorsErrorsOutput = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType     ("55a0::types::BestIPComputeSensorsErrorsOutput_t/v1.0"))
+                                ->AddAttribute("SectorIdx", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeSensorsErrorsOutputArray_t/v1.0", __bestIPComputeSensorsErrorsOutputData, NUMBER_OF_SECTORS)));
+
+      __bestIPValidateSensorsInput = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType     ("55a0::types::BestIPValidateSensorsInput_t/v1.0"))
+                                ->AddAttribute("Error", __bestIPComputeSensorsErrorsOutput)
+                                ->AddAttribute("SelectedSectors", ccs::HelperTools::NewArrayType("55a0::types::SelectedSensorsArray_t/v1.0", ccs::types::UnsignedInteger32, NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+
+      __bestIPSensorsSelectorInput = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType     ("55a0::types::BestIPSensorsSelectorInput_t/v1.0"))
+                                ->AddAttribute("SensorsInfo", ccs::HelperTools::NewArrayType("55a0::types::SensorInformationMLFArray_t/v1.0", __info, TOTAL_NUMBER_OF_MLF_SENSORS))
+                                ->AddAttribute("SelectedSectors", ccs::HelperTools::NewArrayType("55a0::types::SelectedSensorsArray_t/v1.0", ccs::types::UnsignedInteger32, NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+      __bestIPWeightsComputationInputs = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPWeightsComputationInputs_t/v1.0"))
+							->AddAttribute("Sensors", ccs::HelperTools::NewArrayType("55a0::types::BestIPWeightsComputationInputArray_t/v1.0", __wcompin, NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+      __bestIPWeightsComputationOutputs = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPWeightsComputationOutputs_t/v1.0"))
+                            ->AddAttribute("Weights", ccs::HelperTools::NewArrayType("55a0::types::BestIPWeightsComputationOutputArray_t/v1.0", ccs::types::Float32, NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+      __bestIPComputeIPInput = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPComputeIPInput_t /v1.0"))
+                            ->AddAttribute("Weights", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeIPInputWeightsArray_t/v1.0", ccs::types::Float32, NUMBER_OF_MLF_SENSORS_PER_IP))
+                            ->AddAttribute("Data", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeIPInputDataArray_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR * NUMBER_OF_MLF_SENSORS_PER_IP)));
+
+      __bestIPComputeIPOutput = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPComputeIPOutput_t/v1.0"))
+                            ->AddAttribute("Data", ccs::HelperTools::NewArrayType("55a0::types::BestIPComputeIPOutputArray_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR)));
+
+      __bestIPValidateWeightsInputs = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPValidateWeightsInputs_t/v1.0"))
+						    ->AddAttribute<ccs::types::uint32>("MinValidIPs")
+                            ->AddAttribute("BestIP0", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR))
+                            ->AddAttribute("BestIP1", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR))
+                            ->AddAttribute("BestIP2", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR))
+                            ->AddAttribute("BestIP3", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR))
+                            ->AddAttribute("BestIP4", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR))
+                            ->AddAttribute("BestIP5", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR))
+                            ->AddAttribute("BestIP6", ccs::HelperTools::NewArrayType("55a0::types::BestIPValidateWeightsBestIP0Array_t/v1.0", ccs::types::Float32, NUMBER_OF_SAMPLES_PER_SENSOR)));
+
+      __bestIPComputeIPErrorsOutputs = std::shared_ptr<ccs::types::CompoundType>((new (std::nothrow) ccs::types::CompoundType ("55a0::types::BestIPComputeIPErrorsOutputs_t/v1.0"))
+						    ->AddAttribute<ccs::types::uint32>("BestIP1")
+						    ->AddAttribute<ccs::types::uint32>("BestIP2")
+						    ->AddAttribute<ccs::types::uint32>("BestIP3")
+						    ->AddAttribute<ccs::types::uint32>("BestIP4")
+						    ->AddAttribute<ccs::types::uint32>("BestIP5")
+						    ->AddAttribute<ccs::types::uint32>("BestIP6"));
+
+      status = (__cfg ? true : false) && (__bestIPSensorsSelectorInput ? true : false) && (__bestIPWeightsComputationInputs ? true : false) && (__bestIPWeightsComputationOutputs ? true : false);
+    }
+
+  // Register types to the global type database
+  if (status)
+    {
+      status = (ccs::types::GlobalTypeDatabase::Register(__cfg) && 
+		ccs::types::GlobalTypeDatabase::Register(__bestIPSensorsSelectorInput) && 
+		ccs::types::GlobalTypeDatabase::Register(__bestIPValidateSensorsInput) && 
+		ccs::types::GlobalTypeDatabase::Register(__bestIPWeightsComputationInputs) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPWeightsComputationOutputs) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPComputeSensorsErrorsInput) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPComputeSensorsErrorsOutput) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPComputeIPInput) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPComputeIPOutput) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPComputeIPErrorsOutputs) &&
+        ccs::types::GlobalTypeDatabase::Register(__bestIPValidateWeightsInputs));
+    }
+
+  // Register functions to the global function database
+  if (status)
+    {
+      ccs::types::FunctionDefinition_t def;
+      ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPSensorsSelector/v0.1", ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.input, __bestIPSensorsSelectorInput->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.output, __bestIPWeightsComputationInputs->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+      def.function = reinterpret_cast<void*>(&BestIPSensorsSelector);
+      status = ccs::types::GlobalFunctionDatabase::Register(def);
+    }
+
+  if (status)
+    {
+      ccs::types::FunctionDefinition_t def;
+      ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPValidateSensors/v0.1", ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.input, __bestIPValidateSensorsInput->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+      def.function = reinterpret_cast<void*>(&BestIPValidateSensors);
+      status = ccs::types::GlobalFunctionDatabase::Register(def);
+    }
+
+
+  if (status)
+    {
+      ccs::types::FunctionDefinition_t def;
+      ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPWeightsComputation/v0.1", ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.input, __bestIPWeightsComputationInputs->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.output, __bestIPWeightsComputationOutputs->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+      def.function = reinterpret_cast<void*>(&BestIPWeightsComputation);
+      status = ccs::types::GlobalFunctionDatabase::Register(def);
+    }
+
+  if (status)
+    {
+      ccs::types::FunctionDefinition_t def;
+      ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPComputeSensorsErrors/v0.1", ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.input, __bestIPComputeSensorsErrorsInput->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.output, __bestIPComputeSensorsErrorsOutput->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+      def.function = reinterpret_cast<void*>(&BestIPComputeSensorsErrors);
+      status = ccs::types::GlobalFunctionDatabase::Register(def);
+    }
+
+  if (status)
+    {
+      ccs::types::FunctionDefinition_t def;
+      ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPComputeIP/v0.1", ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.input, __bestIPComputeIPInput->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.output, __bestIPComputeIPOutput->GetName(), ccs::types::MaxStringLength);
+      ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+      def.function = reinterpret_cast<void*>(&BestIPComputeIP);
+      status = ccs::types::GlobalFunctionDatabase::Register(def);
+    }
+
+ if (status)
+  {
+    ccs::types::FunctionDefinition_t def;
+    ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPValidateWeights/v0.1", ccs::types::MaxStringLength);
+    ccs::HelperTools::SafeStringCopy(def.input, __bestIPValidateWeightsInputs->GetName(), ccs::types::MaxStringLength);
+    ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+    def.function = reinterpret_cast<void*>(&BestIPValidateWeights);
+    status = ccs::types::GlobalFunctionDatabase::Register(def);
+  }
+
+ if (status)
+  {
+    ccs::types::FunctionDefinition_t def;
+    ccs::HelperTools::SafeStringCopy(def.name, "55a0::cvvf::BestIPComputeIPErrors/v0.1", ccs::types::MaxStringLength);
+    ccs::HelperTools::SafeStringCopy(def.input, __bestIPValidateWeightsInputs->GetName(), ccs::types::MaxStringLength);
+    ccs::HelperTools::SafeStringCopy(def.output, __bestIPComputeIPErrorsOutputs->GetName(), ccs::types::MaxStringLength);
+    ccs::HelperTools::SafeStringCopy(def.config, __cfg->GetName(), ccs::types::MaxStringLength);
+    def.function = reinterpret_cast<void*>(&BestIPComputeIPErrors);
+    status = ccs::types::GlobalFunctionDatabase::Register(def);
+  }
+
+  return status;
+
+}
+ 
+} // namespace cvvf
+
+} // namespace _55a0
+
+#undef LOG_ALTERN_SRC

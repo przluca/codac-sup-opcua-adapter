@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ $HeadURL: https://svnpub.codac.iter.org/codac/iter/codac/dev/units/m-sdn-core/trunk/src/test/resources/Bug9354-topic.xml $
+ $Id: Bug9354-topic.xml 96477 2019-01-09 14:53:55Z sivecm $
+
+ Project       : CODAC Core System - SDN core library - Regression tests (see https://bugzilla.iter.org/codac/show_bug.cgi?id=9354)
+ Description   : SDN topic definition file
+ Authors       : B.Bauvir (IO)
+ 
+ Copyright (c) : 2010-2019 ITER Organization,
+                 CS 90 046
+                 13067 St. Paul-lez-Durance Cedex
+                 France
+
+ This file is part of ITER CODAC software.
+ For the terms and conditions of redistribution or use of this software
+ refer to the file ITER-LICENSE.TXT located in the top level directory
+ of the distribution package.
+-->
+<topic name="BUG-11538:TOPIC" description="Topic definition file (see https://bugzilla.iter.org/codac/show_bug.cgi?id=11538)" version="1" uid="0">
+  <attribute name="reserved" dataType="uint8" multiplicity="11538"/>
+</topic>

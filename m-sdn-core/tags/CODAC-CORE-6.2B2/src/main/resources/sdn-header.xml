@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!-- SDN message header definition -->
+<dataType name="sdn-header" version="1.0" size="48">
+  <!-- SDN header UID - Discriminate between SDN and rogue sources -->
+  <attribute rank="0" name="header_uid" dataType="char" multiplicity="4">SDNv</attribute> <!-- Immutable -->
+  <!-- SDN header version - Obsolete (kept for supporting fault investigation purposes) -->
+  <attribute rank="1" name="header_version" dataType="char" multiplicity="4">2.x</attribute>
+  <!-- SDN header size - Allows for interoperability across versions -->
+  <attribute rank="2" name="header_size" dataType="uint32">48</attribute>
+  <!-- SDN topic type UID - Hash key to identify topic type mismatch between participants -->
+  <attribute rank="3" name="topic_uid" dataType="uint32"/>
+  <!-- SDN topic version - Obsolete (kept for supporting fault investigation purposes) -->
+  <attribute rank="4" name="topic_version" dataType="uint32"/>
+  <!-- SDN topic size - Obsolete (kept for supporting on-the-wire payload processing, e.g. generic FPGA code) -->
+  <attribute rank="5" name="topic_size" dataType="uint32"/>
+  <!-- SDN topic instance identifier - Allows for detection of lost packets -->
+  <attribute rank="6" name="counter" dataType="uint64" qualifier="samplenb"/>
+  <!-- SDN timestamps - Allows for monitoring infrastructure performance -->
+  <attribute rank="7" name="send_time" dataType="uint64" qualifier="timestamp" unit="ns"/>
+  <attribute rank="8" name="recv_time" dataType="uint64" unit="ns">0</attribute>
+</dataType>
+

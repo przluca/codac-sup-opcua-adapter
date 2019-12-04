@@ -1,0 +1,26 @@
+######################################################
+# Default environment variables for SDN core library #
+######################################################
+
+# SDN network interface
+SDN_INTERFACE_NAME=lo
+
+SDN_INTERFACE_NAME=$(if [ -f "${CODAC_CONF}/default/sdn" ]; then . "${CODAC_CONF}/default/sdn"; fi; echo ${SDN_INTERFACE_NAME})
+SDN_INTERFACE_NAME=$(if [ -f "${CODAC_CONF}/apps/env-var-override" ]; then . "${CODAC_CONF}/apps/env-var-override"; fi; echo ${SDN_INTERFACE_NAME})
+
+# Overloaded host-specific configuration
+SDN_INTERFACE_NAME=$(if [ -f "/etc/profile.d/local-sdn-var" ]; then . "/etc/profile.d/local-sdn-var"; fi; echo ${SDN_INTERFACE_NAME})
+SDN_INTERFACE_NAME=$(if [ -f "/etc/profile.d/local-host-var" ]; then . "/etc/profile.d/local-host-var"; fi; echo ${SDN_INTERFACE_NAME})
+
+# Verify if the machine has a fully-qualified name such as xxx-r1
+SDN_INTERFACE_NAME=$(if [ -f "/opt/codac/bin/net-tools.sh" ]; then . "/opt/codac/bin/net-tools.sh"; ALTHOST="`hostname -s`-r1"; IPADDR=`nslookup $ALTHOST | grep "Address: 10" | sed 's/Address: //g'`; echo `get_device_from_address ${IPADDR} IP`; else echo ${SDN_INTERFACE_NAME}; fi;)
+
+# Override variable, if the device has been set-up using codac-configure (e.g. User or DHCP-based machine configuration)
+SDN_INTERFACE_NAME=$(/usr/sbin/codac-network sdn device 2> /dev/null || echo ${SDN_INTERFACE_NAME})
+
+# SDN topic definition XML files
+SDN_TOPIC_PATH=${CODAC_CONF}/sdn
+# Overloaded host-specific configuration
+SDN_TOPIC_PATH=$(if [ -f "/etc/profile.d/local-sdn-var" ]; then . "/etc/profile.d/local-sdn-tools-var"; fi; echo ${SDN_TOPIC_PATH})
+SDN_TOPIC_PATH=$(if [ -f "/etc/profile.d/local-host-var" ]; then . "/etc/profile.d/local-host-var"; fi; echo ${SDN_TOPIC_PATH})
+

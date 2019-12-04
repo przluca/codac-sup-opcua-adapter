@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<sdn:message group="discovery" qualifier="announce">
+  <participant host="" name="" pid="" uid="" role="publisher"/>
+  <topic name="one-pps" uid="45861" version="1" size="32" mapping="239.0.53.129:51838">
+    <dataType name="one-pps" size="32">
+      <attribute name="identifier" dataType="uint64"/>
+      <attribute name="timestamp" dataType="uint64"/>
+      <attribute name="buffer" dataType="char" multiplicity="16"/>
+    </dataType>
+  <value encoding="base64">...</value>
+  </topic>
+  <alternative>PVER#2.0\nMGRP#DISCOVERY\nCMD#QUERY\nTNAME#ALL\n\n</alternative>
+</sdn:message>
+
+<sdn:message group="discovery" qualifier="query">
+  <participant host="*"/>
+  <topic name="*"/>
+  <alternative>PVER#2.0\nMGRP#DISCOVERY\nCMD#QUERY\nTNAME#ALL\n\n</alternative>
+</sdn:message>
+

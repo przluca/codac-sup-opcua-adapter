@@ -1,0 +1,691 @@
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-sup-common-cpp/tags/CODAC-CORE-6.2B2/src/main/c++/cvvf/CVVFFunctionHandler.cpp $
+* $Id: CVVFFunctionHandler.cpp 100236 2019-06-21 11:00:02Z bauvirb $
+*
+* Project	: CODAC Core System
+*
+* Description	: Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*				  CS 90 046
+*				  13067 St. Paul-lez-Durance Cedex
+*				  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <functional> // std::function<>
+#include <map> // std::map
+#include <new> // std::nothrow
+#include <thread> // std::thread
+
+#include <BasicTypes.h> // Misc. type definition
+#include <SysTools.h> // ccs::HelperTools::SafeStringCopy, etc.
+
+#include <log-api.h> // Logging helper functions
+
+#include <ObjectFactory.h>
+
+#include <AnyTypeDatabase.h>
+
+#include <RPCServer.h>
+#include <RPCTypes.h>
+
+// Local header files
+
+#include "DelegatedFunctionHandler.h"
+#include "FunctionDatabase.h"
+
+#include "CVVFFunctionHandler.h"
+
+// Constants
+
+#undef LOG_ALTERN_SRC
+#define LOG_ALTERN_SRC "sup::core"
+
+// Type definition
+
+namespace sup {
+
+namespace core {
+
+class CVVFFunctionHandlerImpl : public ccs::base::RPCServer, public sup::core::DelegatedFunctionHandler
+{
+
+  private:
+
+    struct AsyncData_t {
+      ccs::types::string name; // Function name
+      ccs::types::AnyValue* cfg = static_cast<ccs::types::AnyValue*>(NULL);
+      ccs::types::AnyValue* inp = static_cast<ccs::types::AnyValue*>(NULL);
+      ccs::types::AnyValue* out = static_cast<ccs::types::AnyValue*>(NULL);
+    };
+
+    ccs::types::AnyValue Resolve (const ccs::types::AnyValue& request); // Relying on User-supplied code and type registration
+    ccs::types::AnyValue Invoke (const ccs::types::AnyValue& request); // Relying on User-supplied code and type registration
+    ccs::types::AnyValue Delegate (const ccs::types::AnyValue& request); // Relying on User-supplied code and type registration
+    ccs::types::AnyValue Abort (const ccs::types::AnyValue& request); // Relying on User-supplied code and type registration
+    ccs::types::AnyValue Result (const ccs::types::AnyValue& request); // Relying on User-supplied code and type registration
+
+    bool AsynchronousInvoke (void* data);
+
+  public:
+
+    CVVFFunctionHandlerImpl (const char* service);
+    virtual ~CVVFFunctionHandlerImpl (void);
+
+    virtual ccs::types::AnyValue HandleRequest (const ccs::types::AnyValue& request); // Overloaded virtual method
+
+};
+
+// Function declaration
+
+ccs::base::AnyObject* CVVFFunctionHandler_Constructor (void);
+
+// Global variables
+
+bool CVVFFunctionHandler_IsRegistered =
+  ccs::base::GlobalObjectFactory::Register("sup::core::CVVFFunctionHandler",
+					   (ccs::base::AnyObject_Constructor_t) &CVVFFunctionHandler_Constructor);
+
+// Function definition
+  
+ccs::base::AnyObject* CVVFFunctionHandler_Constructor (void) 
+{
+
+  sup::core::CVVFFunctionHandler* ref = new (std::nothrow) sup::core::CVVFFunctionHandler ();
+
+  return dynamic_cast<ccs::base::AnyObject*>(ref);
+
+}
+
+bool CVVFFunctionHandler::SetParameter (const char* name, const char* value)
+{
+
+  bool status = (static_cast<CVVFFunctionHandlerImpl*>(NULL) == __impl);
+
+  if (status)
+    {
+      status = ((static_cast<const char*>(NULL) != name) &&
+		(static_cast<const char*>(NULL) != value));
+    }
+
+  if (status)
+    {
+      if (std::string(name) == "service")
+	{
+	  __impl = new (std::nothrow) CVVFFunctionHandlerImpl (value);
+	  status = (static_cast<CVVFFunctionHandlerImpl*>(NULL) != __impl);
+	}
+      // ToDo - Move to CVVFFunctionHandler::ProcessMessage
+      if (std::string(name) == "library")
+	{
+	  status = ccs::HelperTools::LoadSharedLibrary(value);
+	  //status = load_shared_library(value);
+	}
+    }
+
+  return status;
+
+}
+
+bool CVVFFunctionHandlerImpl::AsynchronousInvoke (void* data)
+{
+
+  log_info("CVVFFunctionHandlerImpl::AsynchronousProcess - Entering method");
+
+  bool status = ccs::types::GlobalFunctionDatabase::IsValid(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->name);
+
+  ccs::types::FunctionDefinition_t def;
+
+  if (status)
+    {
+      def = ccs::types::GlobalFunctionDatabase::GetFunction(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->name);
+      status = (static_cast<void*>(NULL) != def.function);
+    }
+ 
+  if (status)
+    {
+      if (ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  status = (*(reinterpret_cast<bool(*)(void)>(def.function)))();
+	}
+      else if (!ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // Config operation
+	  status = (*(reinterpret_cast<bool(*)(void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->cfg->GetInstance());
+	}
+      else if (ccs::HelperTools::IsUndefinedString(def.config) && !ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // In operation
+	  status = (*(reinterpret_cast<bool(*)(void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->inp->GetInstance());
+	}
+      else if (ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && !ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // Out operation
+	  status = (*(reinterpret_cast<bool(*)(void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->out->GetInstance());
+	}
+      else if (!ccs::HelperTools::IsUndefinedString(def.config) && !ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  status = (*(reinterpret_cast<bool(*)(void*,void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->cfg->GetInstance(), static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->inp->GetInstance());
+	}
+      else if (!ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && !ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  status = (*(reinterpret_cast<bool(*)(void*,void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->cfg->GetInstance(), static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->out->GetInstance());
+	}
+      else if (ccs::HelperTools::IsUndefinedString(def.config) && !ccs::HelperTools::IsUndefinedString(def.input) && !ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // In-out operation
+	  status = (*(reinterpret_cast<bool(*)(void*,void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->inp->GetInstance(), static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->out->GetInstance());
+	}
+      else
+	{
+	  // In-out operation
+	  log_info("CVVFFunctionHandlerImpl::AsynchronousProcess - Call in-out operation ..");
+	  status = (*(reinterpret_cast<bool(*)(void*,void*,void*)>(def.function)))(static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->cfg->GetInstance(),
+										   static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->inp->GetInstance(),
+										   static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(data)->out->GetInstance());
+	}
+    }
+
+  log_info("CVVFFunctionHandlerImpl::AsynchronousProcess - Leaving method");
+
+  return status;
+
+}
+
+ccs::types::AnyValue CVVFFunctionHandlerImpl::Resolve (const ccs::types::AnyValue& request)
+{
+
+  const ccs::types::AnyValue* __query_value = &request;
+
+  const char* name = static_cast<const char*>((ccs::HelperTools::HasAttribute(__query_value, "value") && (ccs::types::String == ccs::HelperTools::GetAttributeType(__query_value, "value"))) ? 
+					      ccs::HelperTools::GetAttributeReference(__query_value, "value") : 
+					      NULL);
+
+  bool status = (static_cast<const char*>(NULL) != name);
+
+  if (status)
+    {
+      log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Verify name registration ..", name);
+      // Resolve type or method by name
+      status = (ccs::types::GlobalFunctionDatabase::IsValid(name) || ccs::types::GlobalTypeDatabase::IsValid(name));
+    }
+ 
+  if (status)
+    {
+      log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - .. success", name);
+    }
+  
+  // Copy the base reply type ..
+  ccs::types::CompoundType __reply_type (*ccs::base::RPCTypes::Reply_int); // Default RPC reply type
+  
+  if (ccs::types::GlobalFunctionDatabase::IsValid(name))
+    {
+      // .. and add the missing bit
+      __reply_type.AddAttribute("value", ((new (std::nothrow) ccs::types::CompoundType (CVVF_FunctionDefinition_TypeName))
+					  ->AddAttribute<ccs::types::string>("name")   // Function name
+					  ->AddAttribute<ccs::types::string>("config") // Config type name, if any
+					  ->AddAttribute<ccs::types::string>("input")  // Input type name, if any
+					  ->AddAttribute<ccs::types::string>("output")));
+    }
+  
+  if (ccs::types::GlobalTypeDatabase::IsValid(name))
+    {
+      // .. and add the missing bit
+      __reply_type.AddAttribute("value", ccs::types::GlobalTypeDatabase::GetType(name));
+    }
+  
+  // Instantiate RPC reply ..
+  ccs::types::AnyValue __reply_value (__reply_type);
+  
+  if (ccs::types::GlobalFunctionDatabase::IsValid(name))
+    {
+      ccs::types::FunctionDefinition_t def = ccs::types::GlobalFunctionDatabase::GetFunction(name);
+ 
+      ccs::HelperTools::SetAttributeValue(&__reply_value, "value.name", name);
+      if (!ccs::HelperTools::IsUndefinedString(def.config)) ccs::HelperTools::SetAttributeValue<ccs::types::string>(&__reply_value, "value.config", def.config);
+      if (!ccs::HelperTools::IsUndefinedString(def.input))  ccs::HelperTools::SetAttributeValue<ccs::types::string>(&__reply_value, "value.input", def.input);
+      if (!ccs::HelperTools::IsUndefinedString(def.output)) ccs::HelperTools::SetAttributeValue<ccs::types::string>(&__reply_value, "value.output", def.output);
+   }
+
+  ccs::HelperTools::SetAttributeValue<ccs::types::uint64>(&__reply_value, "timestamp", ccs::HelperTools::GetCurrentTime());
+  ccs::HelperTools::SetAttributeValue<ccs::types::boolean>(&__reply_value, "status", status);
+  
+  return __reply_value;
+
+}
+
+ccs::types::AnyValue CVVFFunctionHandlerImpl::Invoke (const ccs::types::AnyValue& request)
+{
+
+  const ccs::types::AnyValue* __query_value = &request;
+
+  const char* name = static_cast<const char*>((ccs::HelperTools::HasAttribute(__query_value, "value.name") && (ccs::types::String == ccs::HelperTools::GetAttributeType(__query_value, "value.name"))) ? 
+					      ccs::HelperTools::GetAttributeReference(__query_value, "value.name") : 
+					      NULL);
+
+  bool status = ccs::types::GlobalFunctionDatabase::IsValid(name);
+  
+  ccs::types::FunctionDefinition_t def;
+
+  if (status)
+    {
+      log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Verify function registration ..", name);
+      def = ccs::types::GlobalFunctionDatabase::GetFunction(name);
+      status = (static_cast<void*>(NULL) != def.function);
+    }
+ 
+  std::shared_ptr<const ccs::types::AnyType> cfg_t;
+  std::shared_ptr<const ccs::types::AnyType> inp_t;
+
+  if (status)
+    {
+      log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Verify type registration ..", name);
+      if (!ccs::HelperTools::IsUndefinedString(def.config))
+	{
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - .. config", name);
+	  cfg_t = ccs::types::GlobalTypeDatabase::GetType(def.config);
+	  status = (ccs::HelperTools::HasAttribute(__query_value, "value.config") &&
+		    (cfg_t->GetSize() == ccs::HelperTools::GetAttributeType(__query_value, "value.config")->GetSize()));
+	}
+
+      if (!ccs::HelperTools::IsUndefinedString(def.input))
+	{
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - .. input", name);
+	  inp_t = ccs::types::GlobalTypeDatabase::GetType(def.input);
+	  status = (ccs::HelperTools::HasAttribute(__query_value, "value.input") &&
+		    (inp_t->GetSize() == ccs::HelperTools::GetAttributeType(__query_value, "value.input")->GetSize()));
+	}
+    }
+  
+  // Copy the base reply type ..
+  ccs::types::CompoundType __reply_type (*ccs::base::RPCTypes::Reply_int); // Default RPC reply type
+  
+  if (!ccs::HelperTools::IsUndefinedString(def.output))
+    {
+      // .. and add the missing bit
+      __reply_type.AddAttribute("value", ccs::types::GlobalTypeDatabase::GetType(def.output));
+    }
+  
+  // Instantiate RPC reply ..
+  ccs::types::AnyValue __reply_value (__reply_type);
+  
+  if (status)
+    {
+      if (ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Call with no argument ..", name);
+	  status = (*(reinterpret_cast<bool(*)(void)>(def.function)))();
+	}
+      else if (!ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // Config operation
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Call with config value ..", name);
+	  ccs::types::AnyValue cfg = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.config");
+	  status = (*(reinterpret_cast<bool(*)(void*)>(def.function)))(cfg.GetInstance());
+	}
+      else if (ccs::HelperTools::IsUndefinedString(def.config) && !ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // In operation
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Call with input value ..", name);
+	  ccs::types::AnyValue inp = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.input");
+	  status = (*(reinterpret_cast<bool(*)(void*)>(def.function)))(inp.GetInstance());
+	}
+      else if (ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && !ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // Out operation
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Call returning output value ..", name);
+	  ccs::types::AnyValue out (ccs::types::GlobalTypeDatabase::GetType(def.output));
+	  status = (*(reinterpret_cast<bool(*)(void*)>(def.function)))(out.GetInstance());
+	}
+      else if (!ccs::HelperTools::IsUndefinedString(def.config) && !ccs::HelperTools::IsUndefinedString(def.input) && ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  ccs::types::AnyValue cfg = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.config");
+	  ccs::types::AnyValue inp = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.input");
+	  status = (*(reinterpret_cast<bool(*)(void*,void*)>(def.function)))(cfg.GetInstance(), inp.GetInstance());
+	}
+      else if (!ccs::HelperTools::IsUndefinedString(def.config) && ccs::HelperTools::IsUndefinedString(def.input) && !ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  ccs::types::AnyValue cfg = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.config");
+	  ccs::types::AnyValue out (ccs::types::GlobalTypeDatabase::GetType(def.output));
+	  status = (*(reinterpret_cast<bool(*)(void*,void*)>(def.function)))(cfg.GetInstance(), out.GetInstance());
+	}
+      else if (ccs::HelperTools::IsUndefinedString(def.config) && !ccs::HelperTools::IsUndefinedString(def.input) && !ccs::HelperTools::IsUndefinedString(def.output))
+	{
+	  // In-out operation
+	  log_info("CVVFFunctionHandlerImpl::HandleRequest('%s') - Call in-out operation ..", name);
+	  ccs::types::AnyValue inp = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.input");
+	  ccs::types::AnyValue out (ccs::types::GlobalTypeDatabase::GetType(def.output));
+	  status = (*(reinterpret_cast<bool(*)(void*,void*)>(def.function)))(inp.GetInstance(), out.GetInstance());
+	}
+      else
+	{
+	  // In-out operation
+	  log_info("CVVFFunctionHandlerImpl::AsynchronousProcess - Call in-out operation ..");
+	  ccs::types::AnyValue cfg = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.config");
+	  ccs::types::AnyValue inp = ccs::HelperTools::GetAttributeValue<ccs::types::AnyValue>(__query_value, "value.input");
+	  ccs::types::AnyValue out (ccs::types::GlobalTypeDatabase::GetType(def.output));
+	  char buffer [1024]; 
+	  inp.SerialiseInstance(buffer, 1024u);
+	  log_info(".. with input '%s' ..", buffer);
+	  status = (*(reinterpret_cast<bool(*)(void*,void*,void*)>(def.function)))(cfg.GetInstance(),
+										   inp.GetInstance(),
+										   out.GetInstance());
+	  out.SerialiseInstance(buffer, 1024u);
+	  log_info(".. producing output '%s'", buffer);
+	  ccs::HelperTools::SetAttributeByReference(&__reply_value, "value", out.GetInstance());
+	}
+    }
+  
+  if (status)
+    {
+      log_info(".. success");
+    }
+  
+  ccs::HelperTools::SetAttributeValue<ccs::types::uint64>(&__reply_value, "timestamp", ccs::HelperTools::GetCurrentTime());
+  ccs::HelperTools::SetAttributeValue<ccs::types::boolean>(&__reply_value, "status", status);
+  
+  return __reply_value;
+
+}
+
+ccs::types::AnyValue CVVFFunctionHandlerImpl::Delegate (const ccs::types::AnyValue& request)
+{
+
+  const ccs::types::AnyValue* __query_value = &request;
+
+  const char* name = static_cast<const char*>((ccs::HelperTools::HasAttribute(__query_value, "value.name") && (ccs::types::String == ccs::HelperTools::GetAttributeType(__query_value, "value.name"))) ? 
+					      ccs::HelperTools::GetAttributeReference(__query_value, "value.name") : 
+					      NULL);
+
+  bool status = ccs::types::GlobalFunctionDatabase::IsValid(name);
+
+  ccs::types::FunctionDefinition_t def;
+
+  if (status)
+    {
+      log_info("CVVFFunctionHandlerImpl::Delegate('%s') - Verify function registration ..", name);
+      def = ccs::types::GlobalFunctionDatabase::GetFunction(name);
+      status = (static_cast<void*>(NULL) != def.function);
+    }
+ 
+  ccs::types::uint32 key = 0u;
+
+  if (status)
+    {
+      // Extract input data
+      log_info("CVVFFunctionHandlerImpl::Delegate('%s') - Extract input data ..", name);
+
+      CVVFFunctionHandlerImpl::AsyncData_t* data = new (std::nothrow) CVVFFunctionHandlerImpl::AsyncData_t;
+
+      ccs::HelperTools::SafeStringCopy(data->name, name, ccs::types::MaxStringLength);
+
+      if (!ccs::HelperTools::IsUndefinedString(def.config))
+	data->cfg = new (std::nothrow) ccs::types::AnyValue (ccs::HelperTools::GetAttributeType(__query_value, "value.config"),
+							     ccs::HelperTools::GetAttributeReference(__query_value, "value.config"));
+
+      if (!ccs::HelperTools::IsUndefinedString(def.input))
+	data->inp = new (std::nothrow) ccs::types::AnyValue (ccs::HelperTools::GetAttributeType(__query_value, "value.input"),
+							     ccs::HelperTools::GetAttributeReference(__query_value, "value.input"));
+
+      if (!ccs::HelperTools::IsUndefinedString(def.output))
+	data->out = new (std::nothrow) ccs::types::AnyValue (ccs::types::GlobalTypeDatabase::GetType(def.output)); // Using type definition
+
+      using namespace std::placeholders;
+      key = this->Launch(std::bind(&CVVFFunctionHandlerImpl::AsynchronousInvoke, this, _1), static_cast<void*>(data));
+    }
+
+  // Copy the base reply type ..
+  ccs::types::CompoundType __reply_type (*ccs::base::RPCTypes::Reply_int); // Default RPC reply type
+  // .. and add the missing bit
+  __reply_type.AddAttribute<ccs::types::uint32>("value");
+  
+  // Instantiate RPC reply ..
+  ccs::types::AnyValue __reply_value (__reply_type);
+  	  
+  ccs::HelperTools::SetAttributeValue<ccs::types::uint64>(&__reply_value, "timestamp", ccs::HelperTools::GetCurrentTime());
+  ccs::HelperTools::SetAttributeValue<ccs::types::boolean>(&__reply_value, "status", status);
+  ccs::HelperTools::SetAttributeValue<ccs::types::uint32>(&__reply_value, "value", key);
+  
+  return __reply_value;
+
+}
+
+ccs::types::AnyValue CVVFFunctionHandlerImpl::Abort (const ccs::types::AnyValue& request)
+{
+
+  const ccs::types::AnyValue* __query_value = &request;
+
+  bool status = (ccs::HelperTools::HasAttribute(__query_value, "value") &&
+		 (ccs::types::UnsignedInteger32 == ccs::HelperTools::GetAttributeType(__query_value, "value")));
+
+  ccs::types::uint32 key = 0u;
+
+  if (status)
+    {
+      // Extract input data
+      key = ccs::HelperTools::GetAttributeValue<ccs::types::uint32>(__query_value, "value");
+      status = this->IsRunning(key); // Expect running
+    }
+
+  CVVFFunctionHandlerImpl::AsyncData_t* data = static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(NULL);
+
+  if (status)
+    {
+      data = static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(this->GetAttribute(key));
+      status = (static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(NULL) != data);
+    }
+
+  // Copy the base reply type ..
+  ccs::types::CompoundType __reply_type (*ccs::base::RPCTypes::Reply_int); // Default RPC reply type
+  
+  if (status)
+    {
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->cfg) delete data->cfg;
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->inp) delete data->inp;
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->out) delete data->out;
+      delete data;
+      status = this->DelegatedFunctionHandler::Abort(key);
+    }
+  
+  // Instantiate RPC reply ..
+  ccs::types::AnyValue __reply_value (__reply_type);
+  
+  ccs::HelperTools::SetAttributeValue<ccs::types::uint64>(&__reply_value, "timestamp", ccs::HelperTools::GetCurrentTime());
+  ccs::HelperTools::SetAttributeValue<ccs::types::boolean>(&__reply_value, "status", status);
+
+  if (status)
+    {
+      ccs::HelperTools::SetAttributeValue(&__reply_value, "qualifier", "success");
+    }
+  else
+    {
+      ccs::HelperTools::SetAttributeValue(&__reply_value, "qualifier", "failure");
+    }
+  
+  return __reply_value;
+
+}
+
+ccs::types::AnyValue CVVFFunctionHandlerImpl::Result (const ccs::types::AnyValue& request)
+{
+
+  const ccs::types::AnyValue* __query_value = &request;
+
+  bool status = (ccs::HelperTools::HasAttribute(__query_value, "value") &&
+		 (ccs::types::UnsignedInteger32 == ccs::HelperTools::GetAttributeType(__query_value, "value")));
+
+  ccs::types::uint32 key = 0u;
+
+  if (status)
+    {
+      // Extract input data
+      key = ccs::HelperTools::GetAttributeValue<ccs::types::uint32>(__query_value, "value");
+      status = !this->IsRunning(key);
+    }
+
+  CVVFFunctionHandlerImpl::AsyncData_t* data = static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(NULL);
+
+  if (status)
+    {
+      data = static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(this->GetAttribute(key));
+      status = (static_cast<CVVFFunctionHandlerImpl::AsyncData_t*>(NULL) != data);
+    }
+
+  // Copy the base reply type ..
+  ccs::types::CompoundType __reply_type (*ccs::base::RPCTypes::Reply_int); // Default RPC reply type
+  
+  if (status)
+    {
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->out)
+	{
+	  // .. and add the missing bit
+	  __reply_type.AddAttribute("value", data->out->GetType());
+	}
+    }
+  
+  // Instantiate RPC reply ..
+  ccs::types::AnyValue __reply_value (__reply_type);
+  
+  ccs::HelperTools::SetAttributeValue<ccs::types::uint64>(&__reply_value, "timestamp", ccs::HelperTools::GetCurrentTime());
+  ccs::HelperTools::SetAttributeValue<ccs::types::boolean>(&__reply_value, "status", status);
+
+  if (status)
+    {
+      ccs::HelperTools::SetAttributeByReference(&__reply_value, "value", data->out->GetInstance());
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->cfg) delete data->cfg;
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->inp) delete data->inp;
+      if (static_cast<ccs::types::AnyValue*>(NULL) != data->out) delete data->out;
+      delete data;
+      // Forget key
+      this->Discard(key);
+    }
+  
+  if (status)
+    {
+      ccs::HelperTools::SetAttributeValue(&__reply_value, "qualifier", "success");
+    }
+  else
+    {
+      ccs::HelperTools::SetAttributeValue(&__reply_value, "qualifier", "failure");
+      ccs::HelperTools::SetAttributeValue(&__reply_value, "reason", "Try again later");
+    }
+  
+  return __reply_value;
+
+}
+
+// cppcheck-suppress unusedFunction // Callback associated to ccs::base::RPCService
+ccs::types::AnyValue CVVFFunctionHandlerImpl::HandleRequest (const ccs::types::AnyValue& request)
+{
+
+  const ccs::types::AnyValue* __query_value = &request;
+#if 0
+  // WARNING - eget command line tool embeds the attributes in a 'query' structure
+  if (ccs::HelperTools::HasAttribute(&request, "query"))
+    {
+      __query_value = new (std::nothrow) ccs::types::AnyValue (ccs::HelperTools::GetAttributeType(&request, "query"), 
+							       ccs::HelperTools::GetAttributeReference(&request, "query"));
+    }
+#endif
+  std::string qualifier;
+
+  bool status = (ccs::HelperTools::HasAttribute(__query_value, "qualifier") &&
+		 (ccs::types::String == ccs::HelperTools::GetAttributeType(__query_value, "qualifier")));
+
+  if (status)
+    {
+      qualifier = std::string(static_cast<char*>(ccs::HelperTools::GetAttributeReference(__query_value, "qualifier")));
+    }
+
+  // We have to support the following operations:
+  // - resolve - Name resolution
+  // - process - Synchronous invocation
+  // - launch - Asynchronous with
+  //   - abort('id') - Abort execution
+  //   - status('id') - Poll status
+  //   - result('id') - Get result
+
+  if (qualifier == "resolve")
+    {
+      return this->Resolve(*__query_value);
+    }
+
+  if (qualifier == "process")
+    {
+      return this->Invoke(*__query_value);
+    }
+
+  if (qualifier == "launch")
+    {
+      return this->Delegate(*__query_value);
+    }
+
+  if (qualifier == "abort")
+    {
+      return this->Abort(*__query_value);
+    }
+
+  if (qualifier == "result")
+    {
+      return this->Result(*__query_value);
+    }
+#if 0
+  if (__query_value != &request)
+    {
+      delete __query_value;
+    }
+#endif
+}
+
+CVVFFunctionHandler::CVVFFunctionHandler (void)
+{
+#if 0
+  __impl = new (std::nothrow) CVVFFunctionHandlerImpl ();
+#else
+  __impl = static_cast<CVVFFunctionHandlerImpl*>(NULL);
+#endif
+  return;
+
+}
+  
+CVVFFunctionHandlerImpl::CVVFFunctionHandlerImpl (const char* service) : ccs::base::RPCServer(service)
+{
+
+  return;
+
+}
+
+CVVFFunctionHandler::~CVVFFunctionHandler (void)
+{
+
+  if (__builtin_expect((static_cast<CVVFFunctionHandlerImpl*>(NULL) != __impl), 1)) // Likely
+    {
+      delete __impl;
+      __impl = static_cast<CVVFFunctionHandlerImpl*>(NULL);
+    }
+
+  return;
+
+}
+  
+CVVFFunctionHandlerImpl::~CVVFFunctionHandlerImpl (void)
+{
+
+  return;
+
+}
+
+} // namespace core
+
+} // namespace sup
+
+#undef LOG_ALTERN_SRC

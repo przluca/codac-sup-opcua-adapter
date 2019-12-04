@@ -1,0 +1,171 @@
+﻿<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" elementFormDefault="qualified"
+  vc:minVersion="1.0">
+
+    <xs:simpleType name="messageGroupType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="discovery"/>
+            <xs:enumeration value="status"/>
+            <xs:enumeration value="issue"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="messageQualifierType">
+        <xs:restriction base="xs:string">
+            <!-- discovery -->
+            <xs:enumeration value="query"/>
+            <xs:enumeration value="response"/>
+            <!-- status -->
+            <xs:enumeration value="startup"/>
+            <xs:enumeration value="shutdown"/>
+            <xs:enumeration value="update"/>
+            <!-- issue -->
+            <xs:enumeration value="error"/>
+            <xs:enumeration value="warning"/>
+            <xs:enumeration value="notice"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- data Type is an enumeration-->
+    <xs:simpleType name="dataTypeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bool"/>
+            <xs:enumeration value="char"/>
+            <xs:enumeration value="string"/> <!-- Special: is a char8[64] -->
+            <xs:enumeration value="int"/>
+            <xs:enumeration value="int8"/>
+            <xs:enumeration value="uint8"/>
+            <xs:enumeration value="int16"/>
+            <xs:enumeration value="uint16"/>
+            <xs:enumeration value="int32"/>
+            <xs:enumeration value="uint32"/>
+            <xs:enumeration value="uint"/>
+            <xs:enumeration value="int64"/>
+            <xs:enumeration value="uint64"/>
+            <xs:enumeration value="float"/>
+            <xs:enumeration value="float32"/>
+            <xs:enumeration value="float64"/>
+            <xs:enumeration value="double"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="roleType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="publisher"/>
+            <xs:enumeration value="subscriber"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="sdnMessage">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="participant" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="group" type="messageGroupType" use="required"/>
+            <xs:attribute name="qualifier" type="messageQualifierType" use="required"/>
+            <xs:attribute name="schemaVersion" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="participant">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="topic" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="issueMessage" type="xs:string" minOccurs="0"/>
+            </xs:sequence>
+            <xs:attribute name="hostName" type="xs:string" use="optional"/>
+            <xs:attribute name="pid" type="xs:string" use="optional"/>
+            <xs:attribute name="applicationName" type="xs:string" use="optional"/>
+            <xs:attribute name="uid" type="xs:string" use="optional"/>
+            <xs:attribute name="interfaceName" type="xs:string" use="optional"/> <!-- SDN interface -->
+            <xs:attribute name="ipAddress" type="xs:string" use="optional"/>
+            <xs:attribute name="role" type="roleType" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="topic">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="attribute" minOccurs="0" maxOccurs="unbounded"/>
+                <!-- status update reporting -->
+                <xs:element ref="pubData" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="subData" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="name" type="xs:string"/>
+            <xs:attribute name="uid" type="xs:string" use="optional"/>
+            <xs:attribute name="mapping" type="xs:string" use="optional"/>
+            <xs:attribute name="version" type="xs:string" use="optional"/>
+            <xs:attribute name="payloadSize" type="xs:string" />
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="attribute">
+        <xs:complexType>
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="dataType" type="dataTypeType" />
+            <xs:attribute name="multiplicity" type="xs:integer" use="optional"/>
+        </xs:complexType>
+    </xs:element>
+
+  <!-- status update reporting for publishers of a topic -->
+  <xs:element name="pubData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="sentPacket"/>
+        <xs:element ref="sentPacketTotal"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="sentPacket">
+    <xs:complexType>
+      <xs:attribute name="bytes" type="xs:integer" use="required"/>
+      <xs:attribute name="count" type="xs:integer" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="sentPacketTotal">
+    <xs:complexType>
+      <xs:attribute name="bytes" type="xs:integer" use="required"/>
+      <xs:attribute name="count" type="xs:integer" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <!-- status update reporting for subscribers to a topic -->
+  <xs:element name="subData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="receivedPacket"/>
+        <xs:element ref="receivedPacketTotal"/>
+        <xs:element ref="latency"/>
+        <xs:element ref="latencyTotal"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="receivedPacket">
+    <xs:complexType>
+      <xs:attribute name="bytes" type="xs:integer" use="required"/>
+      <xs:attribute name="count" type="xs:integer" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="receivedPacketTotal">
+    <xs:complexType>
+      <xs:attribute name="bytes" type="xs:integer" use="required"/>
+      <xs:attribute name="count" type="xs:integer" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="latency">
+    <xs:complexType>
+      <xs:attribute name="min" type="xs:double" use="required"/>
+      <xs:attribute name="max" type="xs:double" use="required"/>
+      <xs:attribute name="average" type="xs:double" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="latencyTotal">
+    <xs:complexType>
+      <xs:attribute name="min" type="xs:double" use="required"/>
+      <xs:attribute name="max" type="xs:double" use="required"/>
+      <xs:attribute name="average" type="xs:double" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

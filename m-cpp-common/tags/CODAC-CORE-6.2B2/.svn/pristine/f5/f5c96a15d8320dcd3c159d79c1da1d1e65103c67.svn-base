@@ -1,0 +1,293 @@
+#ifndef LUTABLE_H
+#define LUTABLE_H
+
+/******************************************************************************
+* $HeadURL$
+* $Id$
+*
+* Project	: CODAC Core System
+*
+* Description	: Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*		  CS 90 046
+*		  13067 St. Paul-lez-Durance Cedex
+*		  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+/* ToDo - Remove pair without changing order
+        - Support empty-invalid cells 
+*/
+
+/* Global header files */
+#ifndef LINT /* MARTe2 Integration */
+#include <string.h> /* strncmp, strncpy, etc. */
+#endif
+/* Local header files */
+
+#include "types.h" /* Condensed integer type definition, RET_STATUS, etc. */
+#include "tools.h" /* Misc. helper functions, e.g. sstrncpy, etc. */
+
+/* Constants */
+#if 0 /* Scalability issue - Define default but not maximumn number of entries */
+#define LUTABLE_MAX_ENTRIES 256
+#else
+#define DEFAULT_LUTABLE_ENTRIES 256
+#endif
+#define KEYWORD_MAX_LENGTH STRING_MAX_LENGTH
+#define EOT_KEYWORD "endoftable"
+
+/* Type definition */
+
+template <class Type> struct KeywordValuePair 
+{
+
+    char keyword [KEYWORD_MAX_LENGTH];
+    Type value;
+
+};
+
+template <class Type> class LUTable 
+{
+
+  private:
+
+    uint_t m_size, m_top;
+    Type m_default;
+    KeywordValuePair<Type>* m_table;
+
+    /* Accessor methods */
+
+    /* Miscellaneous methods */
+    RET_STATUS Copy (uint_t src, uint_t dst) { RET_STATUS status = STATUS_ERROR; if (this->IsValid(dst) != true) { memcpy(&(this->m_table[dst]), &(this->m_table[src]), sizeof(KeywordValuePair<Type>)); this->Clear(src); status = STATUS_SUCCESS; } return status; };
+
+  protected:
+
+  public:
+
+    /* Initializer methods */
+    RET_STATUS AddPair (const char* keyword, const Type& value, uint_t index);
+    RET_STATUS AddPair (const char* keyword, const Type& value) { RET_STATUS status = STATUS_ERROR; if (this->IsValid(keyword) == true) status = this->SetValue(value, keyword); else status = this->AddPair(keyword, value, this->m_top); return status; };
+
+    /* Initializer methods */
+    RET_STATUS LoadTable (KeywordValuePair<Type>* p_table);
+
+    /* Accessor methods */
+    RET_STATUS SetDefault (const Type& value) { this->m_default = value; return STATUS_SUCCESS; };
+    uint_t GetSize (void) { return this->m_top; }; /* Return table size vs. buffer size */
+
+    uint_t GetIndex (const char* keyword); /* Returns first empty cell in case the keyword is not known */
+    RET_STATUS GetIndex (const char* keyword, uint_t& index); 
+
+    char* GetKeyword (uint_t index);
+    RET_STATUS GetKeyword (char* keyword, uint_t index);
+    RET_STATUS SetKeyword (char* keyword, uint_t index) { RET_STATUS status = STATUS_ERROR; if (index < this->m_top) { sstrncpy(this->m_table[index].keyword, keyword, KEYWORD_MAX_LENGTH); status = STATUS_SUCCESS; } return status; };
+
+    Type* GetReference (uint_t index) { Type* ref = NULL; if (index < this->m_top) { ref = &(this->m_table[index].value); } return ref; };
+    Type* GetReference (const char* keyword) { return this->GetReference(this->GetIndex(keyword)); };
+
+    Type GetValue (uint_t index) { Type value = this->m_default; if (index < this->m_top) { value = this->m_table[index].value; } return value; };
+    Type GetValue (const char* keyword) { return this->GetValue(this->GetIndex(keyword)); };
+
+    RET_STATUS GetValue (Type& value, uint_t index) { RET_STATUS status = STATUS_ERROR; if (this->IsValid(index) == true) { value = this->m_table[index].value; status = STATUS_SUCCESS; } return status; };
+    RET_STATUS GetValue (Type& value, const char* keyword) { return this->GetValue(value, this->GetIndex(keyword)); };
+
+    RET_STATUS SetValue (const Type& value, uint_t index) { RET_STATUS status = STATUS_ERROR; if (this->IsValid(index) == true) { this->m_table[index].value = value; status = STATUS_SUCCESS; } return status; };
+    RET_STATUS SetValue (const Type& value, const char* keyword) { return this->SetValue(value, this->GetIndex(keyword)); };
+
+    /* Miscellaneous methods */
+    bool IsValid (uint_t index) { return (((index < this->m_top) && (IsUndefined(this->m_table[index].keyword) == false)) ? true : false); };
+    bool IsValid (const char* keyword) { return this->IsValid(this->GetIndex(keyword)); };
+
+    RET_STATUS Clear (uint_t index) { RET_STATUS status = STATUS_ERROR; if (index < this->m_size) { sstrncpy(this->m_table[index].keyword, STRING_UNDEFINED, KEYWORD_MAX_LENGTH); this->m_table[index].value = this->m_default; status = STATUS_SUCCESS; } return status; };
+    RET_STATUS Clear (const char* keyword) { return this->Clear(this->GetIndex(keyword)); };
+    RET_STATUS Clear (void) { for (uint_t index = 0; index < this->m_size; index += 1) this->Clear(index); this->m_top = 0; return STATUS_SUCCESS; }; /* Clear all table */
+
+    RET_STATUS Compress (void) { RET_STATUS status = STATUS_ERROR; for (uint_t index = 1; index < this->m_top; index += 1) { if (this->Copy(index, index-1) != STATUS_ERROR) status = STATUS_SUCCESS; } if (status == STATUS_SUCCESS) this->m_top -= 1; return status; }; /* One-step compression */
+
+    LUTable (void) { this->m_size = DEFAULT_LUTABLE_ENTRIES; this->m_top = 0; this->m_table = new KeywordValuePair<Type> [this->m_size]; this->Clear(); return; };
+    LUTable (Type& value) { this->m_size = DEFAULT_LUTABLE_ENTRIES; this->m_top = 0; this->m_table = new KeywordValuePair<Type> [this->m_size]; this->m_default = value; this->Clear(); return; };
+    LUTable (uint_t size) { this->m_size = size; this->m_top = 0; this->m_table = new KeywordValuePair<Type> [this->m_size]; this->Clear(); return; };
+    LUTable (KeywordValuePair<Type>* p_table) { this->m_size = GetTableSize(p_table); this->m_top = 0; this->m_table = new KeywordValuePair<Type> [this->m_size]; this->Clear(); this->LoadTable(p_table); return; };
+
+    /* Destructor method */
+   ~LUTable (void) { delete [] this->m_table; return; }; 
+
+    /* Display methods */
+
+};
+
+/* Global variables */
+
+/* Function declaration */
+
+/* Function definition */
+
+template <class Type> uint_t GetTableSize (KeywordValuePair<Type>* p_table)
+{
+
+  uint_t index = 0;
+#if 0 /* Scalability issue - Define default but not maximumn number of entries */
+  RET_STATUS status = STATUS_ERROR;
+
+  /* Compute table size - Table should end with a marker */
+  for (index = 0; index < LUTABLE_MAX_ENTRIES; index += 1)
+    {
+      if (strncmp(p_table[index].keyword, EOT_KEYWORD, KEYWORD_MAX_LENGTH) == 0)
+	{
+	  status = STATUS_SUCCESS;
+	  break;
+	}
+    }
+
+  if (status == STATUS_SUCCESS) // Found it
+    {
+      /* Nothing else to do */
+    }
+#else
+  while (strncmp(p_table[index].keyword, EOT_KEYWORD, KEYWORD_MAX_LENGTH) != 0)
+    {
+      index += 1;
+    }
+#endif
+  return index;
+
+}
+
+/* Initializer methods */
+
+template <class Type> RET_STATUS LUTable<Type>::AddPair (const char* keyword, const Type& value, uint_t index)
+{
+
+  RET_STATUS status = STATUS_ERROR;
+
+  if (index < this->m_size)
+    {
+      sstrncpy(this->m_table[index].keyword, keyword, KEYWORD_MAX_LENGTH);
+      this->m_table[index].value = value;
+
+      if (index >= this->m_top)
+	{
+	  this->m_top = index + 1;
+	}
+
+      status = STATUS_SUCCESS;
+    }
+  
+  return status;
+
+}
+
+template <class Type> RET_STATUS LUTable<Type>::LoadTable (KeywordValuePair<Type>* p_table)
+{
+
+  RET_STATUS status = STATUS_ERROR;
+  uint_t index = 0;
+
+  uint_t size = GetTableSize(p_table);
+
+  if (size > (this->m_size - this->m_top)) /* Larger than remaining portion of the allocated table */
+    {
+      return status;
+    }
+  else
+    {
+      status = STATUS_SUCCESS;
+    }
+
+  for (index = 0; index < size; index += 1)
+    {
+      this->AddPair(p_table[index].keyword, p_table[index].value);
+    }
+
+  return status;
+
+}
+
+/* Accessor methods */
+
+template <class Type> uint_t LUTable<Type>::GetIndex (const char* keyword)
+{
+
+  uint_t index = 0;
+
+  for (index = 0; index < this->m_top; index += 1)
+    {
+#if 1
+      if (strncmp(this->m_table[index].keyword, keyword, KEYWORD_MAX_LENGTH) == 0)
+#else
+      /* WARNING - Unfortunately, the code below will not allow to have two attributes, the name of one early
+	           in the table being a prefix to a later one, e.g.
+	              ...
+                      CTRL-PCS:FSM-STATUS
+                      CTRL-PCS:FSM-STATUS-DESC
+                      ...
+      */
+      if ((this->IsValid(index) == true) && (strncmp(this->m_table[index].keyword, keyword, strlen(this->m_table[index].keyword)) == 0))
+#endif
+	{
+	  break;
+	}
+    }
+
+  return index;
+
+}
+
+template <class Type> RET_STATUS LUTable<Type>::GetIndex (const char* keyword, uint_t& index)
+{
+
+  RET_STATUS status = STATUS_ERROR;
+
+  if ((index = this->GetIndex(keyword)) < this->GetSize()) status = STATUS_SUCCESS;
+
+  return status;
+
+}
+
+template <class Type> char* LUTable<Type>::GetKeyword (uint_t index) 
+{ 
+
+  char* p_keywd = NULL;
+
+  if (index < this->m_top) 
+    { 
+      p_keywd = (char*) this->m_table[index].keyword; 
+    } 
+
+  return p_keywd; 
+
+}
+
+template <class Type> RET_STATUS LUTable<Type>::GetKeyword (char* keyword, uint_t index) 
+{ 
+
+  RET_STATUS status = STATUS_ERROR; 
+
+  if (index < this->m_top) 
+    { 
+      sstrncpy(keyword, this->m_table[index].keyword, KEYWORD_MAX_LENGTH); 
+      status = STATUS_SUCCESS; 
+    } 
+
+  return status; 
+
+}
+
+/* Miscellaneous methods */
+
+/* Constructor methods */
+
+/* Destructor method */
+
+/* Display methods */
+
+#endif /* LUTABLE_H */
+

@@ -1,0 +1,136 @@
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-cpp-tools/tags/CODAC-CORE-6.2B2/src/main/c++/pva/PVAccessTypes.h $
+* $Id: PVAccessTypes.h 99938 2019-05-24 12:11:10Z bauvirb $
+*
+* Project	: CODAC Core System
+*
+* Description	: Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*		  CS 90 046
+*		  13067 St. Paul-lez-Durance Cedex
+*		  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+/**
+ * @file PVAccessTypes.h
+ * @brief Header file for PVAccess specific types.
+ * @date 05/04/2019
+ * @author Bertrand Bauvir (IO)
+ * @copyright 2010-2019 ITER Organization
+ * @detail This header file contains the definition of the PVAccess types.
+ */
+
+#ifndef _PVAccessTypes_h_
+#define _PVAccessTypes_h_
+
+// Global header files
+
+#include <memory> // std::shared_ptr, etc.
+
+#include <BasicTypes.h>
+
+#include <AnyType.h> // Introspectable data type definition ..
+#include <AnyTypeHelper.h> // .. associated helper routines
+
+// Local header files
+
+// Constants
+
+#define PVAccess_Timestamp_TypeName "ccs::Timestamp_t/v1.0"
+#define PVAccess_Severity_TypeName "ccs::Severity_t/v1.0"
+#define PVAccess_RecordBase_TypeName "ccs::Record_t/v1.0"
+
+// Type definition
+
+namespace ccs {
+
+namespace base {
+
+namespace PVAccessTypes {
+
+typedef struct __attribute__((packed)) Timestamp {
+
+  ccs::types::uint64 nanosec = 0ul;
+  ccs::types::char8 iso8601 [32] = "";
+
+} Timestamp_t;
+
+typedef struct __attribute__((packed)) Severity {
+
+  enum Level : ccs::types::uint8 {
+    Undefined = 0,
+    Normal,
+    Notice,
+    Minor,
+    Major,
+    Severe,
+    Invalid,
+  } level = Level::Undefined;
+
+  ccs::types::char8 level_hr [12] = "undefined";
+  ccs::types::string reason = ""; // Optional substantiating information
+
+} Severity_t;
+
+typedef struct __attribute__((packed)) RecordBase {
+
+  ccs::types::uint64 counter = 0ul; // Update counter .. at source
+  Timestamp_t timestamp;
+  Severity_t severity;
+
+} RecordBase_t;
+
+template <typename Type> struct __attribute__((packed)) RecordBaseWithValue : public RecordBase_t {
+
+  Type value;
+
+};
+
+class Record : public ccs::types::CompoundType
+{
+
+  private:
+
+    RecordBase_t* __data = static_cast<RecordBase_t*>(NULL);
+
+  public:
+
+    Record (const char* type) : ccs::types::CompoundType(type) { /* AddAttribute()->AddAttribute(); */ return; };
+    virtual ~Record (void) {};
+
+    Severity::Level GetSeverity (void) const { return __data->severity.level; };
+    bool SetSeverity (Severity::Level level) { __data->severity.level = level; return true; };
+
+    bool Update (void) { __data->counter += 1ul; __data->timestamp.nanosec = ccs::HelperTools::GetCurrentTime(); /* Etc. */ return true; }
+
+};
+
+// Global variables
+
+extern std::shared_ptr<const ccs::types::CompoundType> RecordBase_int; // Introspectable type definition
+
+// Function declaration
+
+// WARNING - ScalarType are statically initialised but there is no way to guarantee static
+// initialisation order. The above types use ScalarType as attributes and must therefore be
+// dynamically initialised .. called by PVAccess classes upon initialisation.
+bool Initialise (void);
+
+// Function definition
+
+} // namespace PVAccessTypes
+
+} // namespace base
+
+} // namespace ccs
+
+#endif // _PVAccessTypes_h_
+

@@ -1,0 +1,135 @@
+/******************************************************************************
+* $HeadURL$
+* $Id$
+*
+* Project	: CODAC Core System
+*
+* Description	: Generic type class definition
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*				  CS 90 046
+*				  13067 St. Paul-lez-Durance Cedex
+*				  France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+/**
+ * @file OPCUAPlantSystemAdapter.h
+ * @brief Header file for OPCUAPlantSystemAdapter class.
+ * @date 11/11/2018
+ * @author Bertrand Bauvir (IO)
+ * @copyright 2010-2018 ITER Organization
+ * @detail This header file contains the definition of the OPCUAPlantSystemAdapter class interface.
+ * The OPCUAPlantSystemAdapter class implementation is not exposed through this header file. A bridge
+ * pattern is favoured to try and avoid exposing potentially changing implementation details
+ * to calling applications. 
+ * The OPCUAPlantSystemAdapter implements a Remote Procedure Call (RPC) mechanism over the network
+ * for loading configuration variable and mapping them to OPCUA records through Channel Access.
+ * The API is that of a ccs::base::ConfigurableObject and ccs::base::MsgableObject to be managed
+ * through the sup::core::ObjectFactoryEngine.
+ */
+
+#ifndef _OPCUAPlantSystemAdapter_h_
+#define _OPCUAPlantSystemAdapter_h_
+
+// Global header files
+
+#include <common/BasicTypes.h>
+#include <common/AnyObject.h>
+
+// Local header files
+
+#include "ConfigurationHandler.h"
+
+// Constants
+
+// Type definition
+
+namespace sup {
+
+namespace core {
+
+class OPCUAPlantSystemAdapterImpl; // Forward class declaration
+
+/**
+ * @brief Interface class providing support for configuration over Remote Procedure
+ * Call (RPC) and serialisation to OPCUA records through Channel Access.
+ * @detail ToDo.
+ *
+ * @note The design is based on a bridge pattern to avoid exposing implementation
+ * specific details through the interface class.
+ */
+
+class OPCUAPlantSystemAdapter : public sup::core::ConfigurationHandler, public ccs::base::CfgableObject, public ccs::base::MsgableObject
+{
+
+  private:
+
+    /**
+     * @brief Attribute. 
+     * @detail Bridge (PIMPL) pattern.
+     */
+
+    OPCUAPlantSystemAdapterImpl* __impl;
+
+  protected:
+
+  public:
+
+    /**
+     * @brief Constructor.
+     */
+
+    OPCUAPlantSystemAdapter (void);
+
+    /**
+     * @brief Destructor.
+     */
+
+    virtual ~OPCUAPlantSystemAdapter (void);
+
+    /**
+     * @brief Accessor. See ccs::base::CfgableObject::SetAttribute.
+     * @detail Sets service name, etc.
+     */
+
+    virtual bool SetParameter (const char* name, const char* value); // Specialises virtual method
+ 
+    /**
+     * @brief Accessor. See ccs::base::MsgableObject::ProcessMessage.
+     * @detail Messages correspond to orders to load library of User-supplied
+     * types, start RPC service, etc.
+     */
+
+    virtual bool ProcessMessage (const char* msg); // Specialises virtual method
+
+    /**
+     * @brief Behaviour. See sup::core::ConfigurationHandler::ReadConfiguration.
+     * @detail Configuration attributes are filled with current values of EPICSv3 channels.
+     */
+
+    virtual bool ReadConfiguration (const std::string& name, ccs::types::AnyValue& value) const; // Specialises sup::core::ConfigurationHandler interface
+
+    /**
+     * @brief Behaviour. See sup::core::ConfigurationHandler::LoadConfiguration.
+     * @detail EPICSv3 channels are written from configuration attributes.
+     */
+
+    virtual bool LoadConfiguration (const std::string& name, const ccs::types::AnyValue& value, const ccs::types::uint32 seed, const ccs::types::uint32 checksum); // Specialises sup::core::ConfigurationHandler interface
+
+};
+
+// Global variables
+
+} // namespace core
+
+} // namespace sup
+
+#endif // _OPCUAPlantSystemAdapter_h_ 
+

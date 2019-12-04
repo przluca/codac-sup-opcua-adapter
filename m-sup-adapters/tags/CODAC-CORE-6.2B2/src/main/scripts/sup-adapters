@@ -1,0 +1,57 @@
+#! /bin/bash
+#
+# Startup Script for SUP related adapter services
+#
+# chkconfig: - 31 76
+# description: Starts and stops SUP related adapter services
+#
+
+#+======================================================================
+# $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-sup-adapters/tags/CODAC-CORE-6.2B2/src/main/scripts/sup-adapters $
+# $Id: sup-adapters 96477 2019-01-09 14:53:55Z sivecm $
+#
+# Project       : CODAC Core System
+#
+# Description   : Starts and stops SUP related services
+#
+# Author        : Kevin Meyer, Cosylab
+#
+# Copyright (c) : 2010-2019 ITER Organization,
+#                 CS 90 046
+#                 13067 St. Paul-lez-Durance Cedex
+#                 France
+#
+# This file is part of ITER CODAC software.
+# For the terms and conditions of redistribution or use of this software
+# refer to the file ITER-LICENSE.TXT located in the top level directory
+# of the distribution package.
+#
+#-======================================================================
+
+. codacenv
+
+SERVICE_PATH=/etc/rc.d/init.d
+# List of all SUP services sorted in their (required) startup order
+#ALL=(sup-adapter-test-tpl)
+ALL=(sup-adapter-ctrl-pcs sup-adapter-d1-j4-fir sup-adapter-d1-j4-mmwi sup-adapter-fuel-fig sup-adapter-fuel-fip)
+
+# Filter out only those services which are installed on the system
+SERVICES=()
+for service in "${ALL[@]}"; do
+  if [ -x "${SERVICE_PATH}/${service}" ]; then
+    SERVICES=("${SERVICES[@]}" "${SERVICE_PATH}/${service}")
+  fi
+done
+
+if [ ${#SERVICES} -eq 0 ]; then
+  YELLOW='\e[0;33m'
+  NC='\e[0m' # No Color
+  echo -e "${YELLOW}No SUP adapter services are installed on this system!${NC}"
+  exit 0
+fi
+
+. $CODAC_ROOT/bin/services/multiple-service-startup
+
+
+
+

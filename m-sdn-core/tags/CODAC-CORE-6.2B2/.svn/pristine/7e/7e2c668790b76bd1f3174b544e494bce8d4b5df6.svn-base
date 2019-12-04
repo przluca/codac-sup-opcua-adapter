@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  SDD Generated Configuration
+  CODAC-VERSION: 5.2.0
+  WARNING: This is an automatically generated file. PLEASE DO NOT MODIFY.
+-->
+
+<topic  name="CTRL_PCS_INTERNAL_ARCH" version="3">
+<attribute name="archive_timestamp" dataType="uint64_t" description="timestamp used for retrieve data from archive" unit="ns - nanosecond" qualifier="timestamp"  rank="1"/>
+<attribute name="id" dataType="uint64_t" description="instance id or sample number for retrieve data from archive" unit="" qualifier="samplenb"  rank="2"/>
+<attribute name="pid_run_time" dataType="double" description="PID run time" unit="" qualifier=""  rank="3"/>
+<attribute name="pid_r" dataType="double" description="pid 1,2 reference" unit="" qualifier=""  multiplicity="[2]"  rank="4"/>
+<attribute name="pid_e" dataType="double" description="PID error value" unit="" qualifier=""  multiplicity="[2]"  rank="5"/>
+<attribute name="pid_u" dataType="double" description="PID output command" unit="" qualifier=""  multiplicity="[2]"  rank="6"/>
+<attribute name="cmd_FIG" dataType="double" description="final command to FUEL" unit="V - Volt" qualifier=""  rank="7"/>
+<attribute name="cmd_FIP" dataType="double" description="command to FIP(SMBI)" unit="V - Volt" qualifier=""  rank="8"/>
+<attribute name="cntELM" dataType="uint32_t" description="number of ELM" unit="" qualifier=""  rank="9"/>
+<attribute name="mean_val" dataType="double" description="mean raw value" unit="" qualifier=""  rank="10"/>
+<attribute name="trig_on" dataType="int8_t" description="accumuation trig on" unit="" qualifier=""  rank="11"/>
+<attribute name="tBuff" dataType="double" description="accumulated value in buffer" unit="" qualifier=""  rank="12"/>
+<attribute name="cnt_peak" dataType="uint32_t" description="defined peak count in buffer." unit="" qualifier=""  rank="13"/>
+<attribute name="tContinue" dataType="int8_t" description="Is continue to previous" unit="" qualifier=""  rank="14"/>
+<attribute name="mode" dataType="uint32_t" description="L-H mode" unit="" qualifier=""  rank="15"/>
+</topic>

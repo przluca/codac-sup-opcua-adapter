@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- Implicit size -->
+<topic name="payload" version="1.0">
+  <attribute rank="0" name="identifier" dataType="uint64"/>
+  <attribute rank="1" name="send-time" dataType="uint64"/>
+  <attribute rank="2" name="recv-time" dataType="uint64"/>
+  <attribute rank="3" name="reserved" dataType="char" multiplicity="2024">H.world</attribute>
+</topic>
+

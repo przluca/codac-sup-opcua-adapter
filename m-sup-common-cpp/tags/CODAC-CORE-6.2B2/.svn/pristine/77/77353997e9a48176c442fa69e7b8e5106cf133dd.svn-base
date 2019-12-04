@@ -1,0 +1,552 @@
+/******************************************************************************
+* $HeadURL$
+* $Id$
+*
+* Project       : CODAC Core System
+*
+* Description   : Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir (IO)
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*                                 CS 90 046
+*                                 13067 St. Paul-lez-Durance Cedex
+*                                 France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+// Global header files
+
+#include <functional> // std::function<>
+#include <map> // std::map
+#include <new> // std::nothrow
+#include <utility> // std::pair
+#include <vector> // std::vector
+
+#include <common/BasicTypes.h> // Misc. type definition
+#include <common/SysTools.h> // ccs::HelperTools::SafeStringCopy, etc.
+#include <common/CyclicRedundancyCheck.h>
+
+#include <common/log-api.h> // Logging helper functions
+
+#include <common/ObjectFactory.h>
+
+#include <common/AnyTypeDatabase.h>
+
+#include <common/ChannelAccessClient.h>
+
+// Local header files
+
+#include "EPICSv3PlantSystemAdapter.h"
+
+// Constants
+
+#undef LOG_ALTERN_SRC
+#define LOG_ALTERN_SRC "sup::core"
+
+// Type definition
+
+namespace sup {
+
+namespace core {
+
+class EPICSv3PlantSystemAdapterImpl
+{
+
+  private:
+
+    ccs::types::AnyValue* __config_cache;
+
+    ccs::base::ChannelAccessClient* __ca_clnt;
+    std::vector<std::tuple<std::string,std::string,const std::shared_ptr<const ccs::types::ScalarType>>> __assoc;
+
+  public:
+
+    EPICSv3PlantSystemAdapterImpl (void);
+    virtual ~EPICSv3PlantSystemAdapterImpl (void);
+
+    bool ReadConfiguration (const std::string& name, ccs::types::AnyValue& value) const;
+    bool LoadConfiguration (const std::string& name, const ccs::types::AnyValue& value, const ccs::types::uint32 seed, const ccs::types::uint32 checksum);
+
+    bool CreateConfigurationCache (const std::string& name, const std::string& type);
+    bool CreateChannelAssociation (const std::string& name, const std::string& chan, const std::string& type);
+    bool StartChannelAccessClient (void);
+
+};
+
+// Function declaration
+
+ccs::base::AnyObject* EPICSv3PlantSystemAdapter_Constructor (void);
+
+// Global variables
+
+bool EPICSv3PlantSystemAdapter_IsRegistered =
+  ccs::base::GlobalObjectFactory::Register("sup::core::EPICSv3PlantSystemAdapter",
+                                           (ccs::base::AnyObject_Constructor_t) &EPICSv3PlantSystemAdapter_Constructor);
+
+// Function definition
+  
+ccs::base::AnyObject* EPICSv3PlantSystemAdapter_Constructor (void) 
+{
+
+  sup::core::EPICSv3PlantSystemAdapter* ref = new (std::nothrow) sup::core::EPICSv3PlantSystemAdapter ();
+
+  return dynamic_cast<ccs::base::AnyObject*>(ref);
+
+}
+
+bool EPICSv3PlantSystemAdapter::SetParameter (const char* name, const char* value)
+{
+
+  bool status = ((static_cast<const char*>(NULL) != name) &&
+                (static_cast<const char*>(NULL) != value));
+
+  if (status)
+    {
+      if ((std::string(name) == "verbose") && (std::string(value) == "true"))
+        {
+          ccs::log::SetStdout();
+        }
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapter::ProcessMessage (const char* msg)
+{
+
+  bool status = !ccs::HelperTools::IsUndefinedString(msg);
+
+  if (status)
+    {
+      log_info("EPICSv3PlantSystemAdapter::ProcessMessage - Message '%s' ..", msg);
+    }
+
+  if (status)
+    {
+      if (true == ccs::HelperTools::Contain(msg, "Create"))
+        {
+          const char* p_buf = msg;
+      
+          while ((*p_buf != 0) && (*p_buf != '{')) { p_buf += 1; }
+          status = ((*p_buf != 0) && (-1 != ccs::HelperTools::FindMatchingBrace(p_buf)));
+
+          ccs::types::string name = STRING_UNDEFINED;
+          ccs::types::string type = STRING_UNDEFINED;
+
+          if (status)
+            {
+              status = ccs::HelperTools::GetAttributeFromJSONContent(p_buf, "name", name, ccs::types::MaxStringLength);
+
+              if (status)
+                {
+                  status = ccs::HelperTools::Strip(name, "\"");
+                }
+            }
+
+          if (status)
+            {
+              status = ccs::HelperTools::GetAttributeFromJSONContent(p_buf, "type", type, ccs::types::MaxStringLength);
+
+              if (status)
+                {
+                  status = ccs::HelperTools::Strip(type, "\"");
+                }
+            }
+
+          if (status)
+            {
+              status = (static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL) != __impl);
+            }
+
+          if (status)
+            {
+              log_info("EPICSv3PlantSystemAdapter::ProcessMessage - Create structured variable '%s' with type '%s' ..", name, type);
+              status = __impl->CreateConfigurationCache(std::string(name), std::string(type));
+            }
+        }
+
+      if (true == ccs::HelperTools::Contain(msg, "Associate"))
+        {
+          const char* p_buf = msg;
+      
+          while ((*p_buf != 0) && (*p_buf != '{')) { p_buf += 1; }
+          status = ((*p_buf != 0) && (-1 != ccs::HelperTools::FindMatchingBrace(p_buf)));
+
+          ccs::types::string name = STRING_UNDEFINED;
+          ccs::types::string type = STRING_UNDEFINED;
+          ccs::types::string chan = STRING_UNDEFINED;
+
+          if (status)
+            {
+              status = ccs::HelperTools::GetAttributeFromJSONContent(p_buf, "name", name, ccs::types::MaxStringLength);
+
+              if (status)
+                {
+                  status = ccs::HelperTools::Strip(name, "\"");
+                }
+            }
+
+          if (status)
+            {
+              status = ccs::HelperTools::GetAttributeFromJSONContent(p_buf, "type", type, ccs::types::MaxStringLength);
+
+              if (status)
+                {
+                  status = ccs::HelperTools::Strip(type, "\"");
+                }
+
+              if (!status)
+                { // Type will be inferred from the configuration variable
+                  status = true;
+                }
+            }
+
+          if (status)
+            {
+              status = ccs::HelperTools::GetAttributeFromJSONContent(p_buf, "channel", chan, ccs::types::MaxStringLength);
+
+              if (status)
+                {
+                  status = ccs::HelperTools::Strip(chan, "\"");
+                }
+            }
+
+          if (status)
+            {
+              status = (static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL) != __impl);
+            }
+
+          if (status)
+            {
+              log_info("EPICSv3PlantSystemAdapter::ProcessMessage - Create association ..");
+              status = __impl->CreateChannelAssociation(std::string(name), std::string(chan), std::string(type));
+            }
+        }
+
+      if (true == ccs::HelperTools::Contain(msg, "Start"))
+        {
+          if (status)
+            {
+              status = (static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL) != __impl);
+            }
+
+          if (status)
+            {
+              log_info("EPICSv3PlantSystemAdapter::ProcessMessage - Start CA client ..");
+              status = __impl->StartChannelAccessClient();
+            }
+        }
+    }
+
+  if (status)
+    {
+      log_info("EPICSv3PlantSystemAdapter::ProcessMessage - .. success");
+    }
+  else
+    {
+      log_error("EPICSv3PlantSystemAdapter::ProcessMessage - .. failure");
+    }
+
+  log_info("EPICSv3PlantSystemAdapter::ProcessMessage - Leaving method");
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapter::ReadConfiguration (const std::string& name, ccs::types::AnyValue& value) const
+{
+
+  bool status = (static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL) != __impl);
+
+  if (status)
+    {
+      status = __impl->ReadConfiguration(name, value);
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapter::LoadConfiguration (const std::string& name, const ccs::types::AnyValue& value, const ccs::types::uint32 seed, const ccs::types::uint32 checksum)
+{
+
+  bool status = (static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL) != __impl);
+
+  if (status)
+    {
+      status = __impl->LoadConfiguration(name, value, seed, checksum);
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapterImpl::ReadConfiguration (const std::string& name, ccs::types::AnyValue& value) const
+{
+
+  bool status = (static_cast<ccs::types::AnyValue*>(NULL) != __config_cache);
+
+  for (ccs::types::uint32 index = 0u; (index < __assoc.size()) && status; index += 1u)
+    {
+      log_info("EPICSv3PlantSystemAdapterImpl::ReadConfiguration - Update cache '%s' attribute ..", std::get<0>(__assoc[index]).c_str());
+      memcpy(ccs::HelperTools::GetAttributeReference(__config_cache, std::get<0>(__assoc[index]).c_str()), 
+             __ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetInstance(), 
+             __ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetSize());
+    }
+
+  if (status)
+    {
+      value = *__config_cache; // AnyValue::operator= (const AnyValue&)
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapterImpl::LoadConfiguration (const std::string& name, const ccs::types::AnyValue& value, const ccs::types::uint32 seed, const ccs::types::uint32 checksum)
+{
+
+  bool status = (static_cast<ccs::types::AnyValue*>(NULL) != __config_cache);
+
+  // Snapshot
+  ccs::types::AnyValue copy;
+
+  if (status)
+    {
+      status = ReadConfiguration(name, copy);
+    }
+
+  if (status)
+    {
+      // Update cache
+      *__config_cache = value; // AnyValue::operator= (const AnyValue&)
+      status = (checksum == ccs::HelperTools::CyclicRedundancyCheck<ccs::types::uint32>(reinterpret_cast<ccs::types::uint8*>(__config_cache->GetInstance()), __config_cache->GetSize(), seed));
+    }
+
+  for (ccs::types::uint32 index = 0u; (status && (index < __assoc.size())); index += 1u)
+    {
+      log_info("EPICSv3PlantSystemAdapterImpl::LoadConfiguration - Update from cache '%s' attribute ..", std::get<0>(__assoc[index]).c_str());
+      memcpy(__ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetInstance(), 
+             ccs::HelperTools::GetAttributeReference(__config_cache, std::get<0>(__assoc[index]).c_str()), 
+             __ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetSize());
+              
+      status = __ca_clnt->UpdateVariable(std::get<1>(__assoc[index]).c_str());
+    }
+
+  // Let the CA cache also update through monitors
+  if (status)
+    {
+      log_info("EPICSv3PlantSystemAdapterImpl::LoadConfiguration - .. check monitors ..");
+      ccs::HelperTools::SleepFor(1000000000ul); // 1sec
+    }
+
+  for (ccs::types::uint32 index = 0u; (status && (index < __assoc.size())); index += 1u)
+    {
+      memcpy(ccs::HelperTools::GetAttributeReference(__config_cache, std::get<0>(__assoc[index]).c_str()), 
+             __ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetInstance(), 
+             __ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetSize());
+    }
+
+  if (status)
+    {
+      log_info("EPICSv3PlantSystemAdapterImpl::LoadConfiguration - .. verify checksum again ..");
+      status = (checksum == ccs::HelperTools::CyclicRedundancyCheck<ccs::types::uint32>(reinterpret_cast<ccs::types::uint8*>(__config_cache->GetInstance()), __config_cache->GetSize(), seed));
+    }
+
+  if (status)
+    {
+      log_info("EPICSv3PlantSystemAdapter::LoadConfiguration - .. success");
+    }
+  else
+    {
+      log_error("EPICSv3PlantSystemAdapter::LoadConfiguration - .. failure");
+    }
+
+  if (!status)
+    {
+      log_error("EPICSv3PlantSystemAdapter::LoadConfiguration - Restore snapshot");
+
+      for (ccs::types::uint32 index = 0u; index < __assoc.size(); index += 1u)
+        {
+          memcpy(__ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetInstance(), 
+                 ccs::HelperTools::GetAttributeReference(&copy, std::get<0>(__assoc[index]).c_str()), 
+                 __ca_clnt->GetVariable(std::get<1>(__assoc[index]).c_str())->GetSize());
+          
+          __ca_clnt->UpdateVariable(std::get<1>(__assoc[index]).c_str());
+        }
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapterImpl::CreateConfigurationCache (const std::string& name, const std::string& type)
+{
+
+  bool status = (static_cast<ccs::types::AnyValue*>(NULL) == __config_cache);
+
+  std::shared_ptr<const ccs::types::AnyType> desc;
+
+  if (status)
+    {
+      try
+        {
+          desc = ccs::types::GlobalTypeDatabase::GetType(type.c_str());
+          status = static_cast<bool>(desc);
+        }
+      catch (const std::exception& e)
+        {
+          log_error("EPICSv3PlantSystemAdapterImpl::CreateConfigurationCache - Caught '%s' exception", e.what());
+          status = false;
+        }
+    }
+
+  if (status)
+    {
+      __config_cache = new (std::nothrow) ccs::types::AnyValue (desc);
+      status = (static_cast<ccs::types::AnyValue*>(NULL) != __config_cache);
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapterImpl::CreateChannelAssociation (const std::string& name, const std::string& chan, const std::string& type)
+{
+
+  bool status = (static_cast<ccs::types::AnyValue*>(NULL) != __config_cache);
+
+  std::shared_ptr<const ccs::types::AnyType> desc;
+
+  if (status)
+    {
+      try
+        {
+          desc = ccs::types::GlobalTypeDatabase::GetType(type.c_str());
+          status = static_cast<bool>(desc);
+        }
+      catch (const std::exception& e)
+        {
+          log_warning("EPICSv3PlantSystemAdapterImpl::CreateChannelAssociation - Caught '%s' exception ..", e.what());
+          status = false;
+        }
+
+      if (!status && type.empty())
+        { // Get the type description from the configuration variable
+          log_notice("EPICSv3PlantSystemAdapterImpl::CreateChannelAssociation - Try and get type description from the cache ..");
+          desc = ccs::HelperTools::GetAttributeType(__config_cache, name.c_str());
+          status = static_cast<bool>(desc);
+        }
+    }
+
+  if (status)
+    {
+      status = ccs::HelperTools::Is<ccs::types::ScalarType>(desc);
+    }
+
+  if (status)
+    {
+      status = ccs::HelperTools::HasAttribute(__config_cache, name.c_str());
+    }
+
+  if (status)
+    {
+      // Register association
+      __assoc.push_back(std::make_tuple(name, chan, std::dynamic_pointer_cast<const ccs::types::ScalarType>(desc)));
+    }
+
+  return status;
+
+}
+
+bool EPICSv3PlantSystemAdapterImpl::StartChannelAccessClient (void)
+{
+
+  bool status = (static_cast<ccs::base::ChannelAccessClient*>(NULL) != __ca_clnt);
+
+  // Configure CA client
+  for (ccs::types::uint32 index = 0u; (status && (index < __assoc.size())); index += 1u)
+    {
+      log_info("EPICSv3PlantSystemAdapterImpl::StartChannelAccessClient - Add variable '%s' of type '%s' ..", std::get<1>(__assoc[index]).c_str(), std::get<2>(__assoc[index])->GetName());
+      //using namespace std::placeholders;
+      status = __ca_clnt->AddVariable(std::get<1>(__assoc[index]).c_str(), ccs::types::AnyputVariable, std::get<2>(__assoc[index]));
+    }
+
+  if (status)
+    {
+      log_info("EPICSv3PlantSystemAdapterImpl::StartChannelAccessClient - Launch thread ..");
+      status = __ca_clnt->Launch();
+    }
+
+  return status;
+
+}
+
+EPICSv3PlantSystemAdapter::EPICSv3PlantSystemAdapter (void)
+{
+
+  log_info("EPICSv3PlantSystemAdapter::EPICSv3PlantSystemAdapter - Entering method");
+
+  __impl = new (std::nothrow) EPICSv3PlantSystemAdapterImpl ();
+
+  return;
+
+}
+  
+EPICSv3PlantSystemAdapterImpl::EPICSv3PlantSystemAdapterImpl (void)
+{
+
+  // Initialise attributes
+  __config_cache = static_cast<ccs::types::AnyValue*>(NULL);
+
+  // Create CA client
+  __ca_clnt = ccs::base::ChannelAccessInterface::GetInstance<ccs::base::ChannelAccessClient>();
+
+  return;
+
+}
+
+EPICSv3PlantSystemAdapter::~EPICSv3PlantSystemAdapter (void)
+{
+
+  if (__builtin_expect((static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL) != __impl), 1)) // Likely
+    {
+      delete __impl;
+      __impl = static_cast<EPICSv3PlantSystemAdapterImpl*>(NULL);
+    }
+
+  return;
+
+}
+  
+EPICSv3PlantSystemAdapterImpl::~EPICSv3PlantSystemAdapterImpl (void)
+{
+
+  // Release resources
+  if (static_cast<ccs::base::ChannelAccessClient*>(NULL) != __ca_clnt)
+    {
+      ccs::base::ChannelAccessInterface::Terminate<ccs::base::ChannelAccessClient>();
+      __ca_clnt = static_cast<ccs::base::ChannelAccessClient*>(NULL);
+    }
+
+  if (static_cast<ccs::types::AnyValue*>(NULL) != __config_cache)
+    {
+      delete __config_cache;
+      __config_cache = static_cast<ccs::types::AnyValue*>(NULL);
+    }
+
+  return;
+
+}
+
+} // namespace core
+
+} // namespace sup
+
+#undef LOG_ALTERN_SRC

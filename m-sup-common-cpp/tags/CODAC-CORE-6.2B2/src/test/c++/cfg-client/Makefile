@@ -1,0 +1,77 @@
+#======================================================================
+# $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-sup-common-cpp/tags/CODAC-CORE-6.2B2/src/test/c++/cfg-client/Makefile $
+# $Id: Makefile 101405 2019-08-06 14:39:31Z bauvirb $
+#
+# Project       : m-cpp-common
+#
+# Description   : Makefile
+#
+# Author        : William Ledda (Vitrociset S.p.A.)
+#
+# Copyright (c) : 2010-2019 ITER Organization,
+#                 CS 90 046
+#                 13067 St. Paul-lez-Durance Cedex
+#                 France
+#
+# This file is part of ITER CODAC software.
+# For the terms and conditions of redistribution or use of this software
+# refer to the file ITER-LICENSE.TXT located in the top level directory
+# of the distribution package.
+#
+#-======================================================================
+
+PROGNAME = cfg-client
+
+CC=g++
+
+INCLUDE_DIR := ../../../main/c++/config
+#INCLUDE_DIR += $(CODAC_ROOT)/include
+INCLUDE_DIR += $(EPICS_BASE)/include $(EPICS_BASE)/include/os/Linux $(EPICS_BASE)/include/compiler/gcc
+INCLUDE_DIR += $(CODAC_ROOT)/m-cpp-common/tags/CODAC-CORE-6.2B2/src/main/c++/base
+INCLUDE_DIR += $(CODAC_ROOT)/m-cpp-common/tags/CODAC-CORE-6.2B2/src/main/c++/include
+INCLUDE_DIR += $(CODAC_ROOT)/m-cpp-common/tags/CODAC-CORE-6.2B2/src/main/c++/types
+INCLUDE_DIR += $(CODAC_ROOT)/m-cpp-common/tags/CODAC-CORE-6.2B2/src/main/c++/tools
+INCLUDE_DIR += $(CODAC_ROOT)/m-cpp-common/tags/CODAC-CORE-6.2B2/src/main/c++/common 
+
+#LIBRARY_DIR := ../../../../target/lib
+LIBRARY_DIR += $(CODAC_ROOT)/lib
+LIBRARY_DIR += $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
+
+SOURCE_DIR := .
+TARGET_DIR := $(CODAC_ROOT)
+
+BINARY_DIR := $(TARGET_DIR)/bin
+OBJECT_DIR := $(TARGET_DIR)/obj/$(PROGNAME)
+
+SOURCES := $(wildcard $(SOURCE_DIR)/*.cpp)
+OBJECTS := $(addprefix $(OBJECT_DIR)/,$(patsubst %.cpp,%.obj,$(notdir $(SOURCES))))
+
+DEPENDS := rt pthread ccs-common ccs-base ccs-types sup-config
+
+EXECUTABLE := $(BINARY_DIR)/$(PROGNAME)
+
+CCFLAGS := -c -g -std=c++11
+#CCFLAGS += -pedantic -Wall -Wextra
+CCFLAGS += $(foreach dir,$(INCLUDE_DIR),-I$(dir))
+
+LDFLAGS := $(foreach dir,$(LIBRARY_DIR),-Wl,-rpath,$(dir))
+LDFLAGS += $(foreach dir,$(LIBRARY_DIR),-L$(dir))
+
+LDLIBS := $(foreach libs,$(DEPENDS),-l$(libs))
+
+all: $(SOURCES) $(EXECUTABLE)
+
+clean:
+	@$(RM) $(PROGNAME) *.o
+	@$(RM) -rf $(OBJECT_DIR)
+
+run: $(SOURCES) $(EXECUTABLE)
+	$(EXECUTABLE)
+
+$(EXECUTABLE): $(OBJECTS)
+	mkdir -p $(BINARY_DIR)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@ $(LDLIBS)
+
+$(OBJECT_DIR)/%.obj: $(SOURCE_DIR)/%.cpp
+	mkdir -p $(OBJECT_DIR)
+	$(CC) $(CCFLAGS) $< -o $@

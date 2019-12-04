@@ -1,0 +1,29 @@
++ApplicationTypes = {
+    Class = ReferenceContainer  
+    +Config_t = {
+        Class = IntrospectionStructure
+        M = {
+            Type = float32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+        Y0 = {
+           Type = float32
+            NumberOfDimensions = 0
+            NumberOfElements = 1
+        }
+    }   
+}
++OPCUAServer = {
+    Class = OPCUA::OPCUAServer
+    Port = 4840
+    CPUMask = 0x3
+    AddressSpace = {
+        CurrentTime = {
+            Type = uint64
+        }
+        Data = {
+            Type = Config_t
+        }
+    }
+}

@@ -1,0 +1,47 @@
+#ifndef SDN_COMMON_H
+#define SDN_COMMON_H
+
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-sdn-core/tags/CODAC-CORE-6.2B2/src/main/c++/include/sdn-common.h $
+* $Id: sdn-common.h 96477 2019-01-09 14:53:55Z sivecm $
+*
+* Project	: CODAC Core System
+*
+* Description	: SDN - Infrastructure tools - Prototype
+*
+* Author        : Bertrand Bauvir
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*                 CS 90 046
+*                 13067 St. Paul-lez-Durance Cedex
+*                 France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+/* Global header files */
+
+#include <stdio.h> /* sscanf, printf, etc. */
+#include <string.h> /* strncpy, etc. */
+
+/* Local header files */
+
+#include "constants.h" /* Constants valid for this scope */
+
+#include "sdn-types.h" /* Misc. type definition, e.g. RET_STATUS */
+#include "sdn-tools.h" /* Misc. helper functions, e.g. hash, etc. */
+
+/* Constants */
+
+/* Type definition */
+
+/* Global variables */
+
+/* Function declaration */
+
+/* Function definition */
+
+#endif /* SDN_COMMON_H */

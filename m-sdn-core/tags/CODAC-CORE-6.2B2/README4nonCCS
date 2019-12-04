@@ -1,0 +1,27 @@
+CPP_COMMON_VERSION=1.2.1
+SDN_CORE_VERSION=1.1
+#CODAC_DEV_SVN_PATH="https://svnpub.iter.org/codac/iter/codac/dev/units"
+CODAC_DEV_SVN_PATH="${HOME}/projects/sdn"
+
+## Create branch from tagged version
+svn copy ${CODAC_DEV_SVN_PATH}/m-sdn-core/tags/v${SDN_CORE_VERSION} ${CODAC_DEV_SVN_PATH}/m-sdn-core/branches/v${SDN_CORE_VERSION}_nonCCS
+
+FILE_LIST="any-thread.h any-type.h base64.h log-api.h lu-table.h "
+FILE_LIST="${FILE_LIST} CyclicRedundancyCheck.h Hash.h"
+FILE_LIST="${FILE_LIST} Buffer.h CircularBuffer.h SquareRoot.h Statistics.h"
+FILE_LIST="${FILE_LIST} Lock.h AtomicLock.h"
+FILE_LIST="${FILE_LIST} NetTools.h SysTools.h"
+FILE_LIST="${FILE_LIST} tools.h types.h"
+FILE_LIST="${FILE_LIST} base-api.h mcast-api.h mcast-constants.h mcast-participant.h mcast-publisher.h mcast-subscriber.h mcast-messenger.h"
+FILE_LIST="${FILE_LIST} ucast-api.h ucast-constants.h ucast-participant.h ucast-publisher.h ucast-subscriber.h ucast-messenger.h"
+for FILE in ${FILE_LIST}; do svn copy ${CODAC_DEV_SVN_PATH}/m-cpp-common/tags/v${CPP_COMMON_VERSION}/src/main/c++/include/${FILE} ${CODAC_DEV_SVN_PATH}/m-sdn-core/branches/v${SDN_CORE_VERSION}_nonCCS/src/main/c++/include; done
+
+FILE_LIST="any-thread.cpp any-type.cpp log-api.cpp"
+FILE_LIST="${FILE_LIST} mcast-participant.cpp mcast-publisher.cpp mcast-subscriber.cpp mcast-messenger.cpp"
+FILE_LIST="${FILE_LIST} ucast-participant.cpp ucast-publisher.cpp ucast-subscriber.cpp ucast-messenger.cpp"
+for FILE in ${FILE_LIST}; do svn copy ${CODAC_DEV_SVN_PATH}/m-cpp-common/tags/v${CPP_COMMON_VERSION}/src/main/c++/library/${FILE} ${CODAC_DEV_SVN_PATH}/m-sdn-core/branches/v${SDN_CORE_VERSION}_nonCCS/src/main/c++/library; done
+
+FILE_LIST="AnyType-test.cpp LUTable-test.cpp NetTools-test.cpp MCastParticipant-test.cpp SquareRoot-test.cpp"
+for FILE in ${FILE_LIST}; do svn copy ${CODAC_DEV_SVN_PATH}/m-cpp-common/tags/v${CPP_COMMON_VERSION}/src/test/c++/unit/${FILE} ${CODAC_DEV_SVN_PATH}/m-sdn-core/branches/v${SDN_CORE_VERSION}_nonCCS/src/test/c++/unit; done
+
+# Edit the following files: sdn-base.h, sdn-tools.h, sdn-types.h, any-type-xml.h, Makefile

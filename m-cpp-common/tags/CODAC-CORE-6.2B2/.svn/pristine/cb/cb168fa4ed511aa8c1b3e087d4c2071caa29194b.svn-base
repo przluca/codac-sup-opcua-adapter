@@ -1,0 +1,69 @@
+<Configuration>
+  <DataTypes>
+    <!-- <xi:include href="app_Limits_t.xml"/> -->
+    <DataType name="app:Limits_t" version="1.0">
+      <attributes>
+        <attribute name="max" type="float64"/>
+        <attribute name="min" type="float64"/>
+      </attributes>
+    </DataType>
+    <!-- <xi:include href="app_Config_t.xml"/> -->
+    <DataType name="app:Config_t" version="1.0">
+      <attribute name="limits" description="Absolute limits">
+        <attribute name="ampl" type="app:Limits_t" description="Amplitude limits" unit="V"/>
+        <attribute name="rate" type="app:Limits_t" description="Rate limits" unit="V/s"/>
+      </attribute>
+    </DataType>
+  </DataTypes>
+  <Variables>
+    <Variable name="oplimits::maxFlux" type="float64">default</Variable>
+    <Variable name="output::absolutelimits" type="app:Config_t"/>
+    <Variable name="output::configuration" type="app:Config_t"/>
+    <Variable name="output::reference" type="float64" unit="V"/>
+  </Variables>
+  <Processes>
+    <Process name="VerifySetpointAgainstDesignLimits" type="RemoteVerificationService::BoundsChecker">
+      <URI>pva://BoundsCheckerService</URI>
+      <Configuration>
+	<HigherBound>output::absolutelimits.ampl.max</HigherBound>
+	<LowerBound>output::absolutelimits.ampl.min</LowerBound>
+      </Configuration>
+      <Inputs>
+	<Input name="value" alias="output::reference"/>
+      </Inputs>
+    </Process>
+    <Process name="VerifySetpointAgainstTodayLimits" type="RemoteVerificationService::BoundsChecker">
+      <URI>pva://BoundsCheckerService</URI>
+      <Configuration>
+	<HigherBound>output::configurationlimits.ampl.max</HigherBound>
+	<LowerBound>output::configurationlimits.ampl.min</LowerBound>
+      </Configuration>
+      <Inputs>
+	<Input name="value" alias="output::reference"/>
+      </Inputs>
+    </Process>
+    <!-- One process outputs a temp variable with opaque type -->
+  </Processes>
+  <!-- <xi:include href="interfaces-specification.xml"/> -->
+  <Interfaces>
+    <Interface name="OperatingInstructions" type="FileReader">
+      <Configuration>
+        <FilePath>/etc/iter/limits_20181115.xml</FilePath>
+      </Configuration>
+      <Outputs>
+	<!-- local as named in the file, alias to the workspace -->
+	<Output name="local::maxFlux" alias="oplimits::maxFlux"/>
+      </Outputs>
+    </Interface>
+    <Interface name="PlantSystemOutput" type="FileWriter">
+      <Configuration>
+        <CBS>D1-I9</CBS>
+        <FilePath>/var/opt/iter/%{CBS}_%{date}.xml</FilePath>
+      </Configuration>
+      <Inputs>
+	<!-- local as named in the file, alias to the workspace -->
+	<Input name="value" alias="output::configuration"/>
+      </Inputs>
+    </Interface>
+  </Interfaces>
+</Configuration>

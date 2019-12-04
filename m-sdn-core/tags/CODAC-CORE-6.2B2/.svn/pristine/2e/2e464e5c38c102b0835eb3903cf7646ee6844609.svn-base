@@ -1,0 +1,15 @@
+######################################################
+# Default development variables for SDN core library #
+######################################################
+
+## SDN core library header files
+SDN_CORE_INCLUDE_DIR=${CODAC_ROOT}/include/sdn-core
+
+## SDN core library path
+SDN_CORE_LIBRARY_DIR=${CODAC_ROOT}/lib
+
+## SDN core library version
+SDN_CORE_VERSION=@@project.version@@
+SDN_CORE_VERSION=${SDN_CORE_VERSION//./}
+#SDN_CORE_VERSION=${SDN_CORE_VERSION//./0}
+

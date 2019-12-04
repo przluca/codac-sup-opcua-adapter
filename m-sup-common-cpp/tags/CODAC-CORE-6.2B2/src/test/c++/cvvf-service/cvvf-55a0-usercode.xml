@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<object application="codac:obj-factory" name="gbs-tcn-health" xmlns="urn:x-iter:plant:2015" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2015 Plant.xsd">
+  <libraries>
+    <!-- Load basic library -->
+    <library>libsup-cvvf.so</library> <!-- CVVF related classes -->
+    <library>lib55a0-usercode.so</library> <!-- User-defined types and code -->
+  </libraries>
+  <instances>
+    <instance name="cvvf-service" type="sup::core::CVVFFunctionHandler">
+      <parameter name="service">rpc@cvvf-service</parameter>
+      <message>Start</message>
+    </instance>
+  </instances>
+</object>

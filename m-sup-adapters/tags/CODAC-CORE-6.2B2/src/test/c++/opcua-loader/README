@@ -1,0 +1,19 @@
+## 1. Start OPC UA server (MARTe application)
+
+${MARTe2_DIR}/Build/x86-linux/App/MARTeApp.ex -l RealTimeLoader -f ./src/test/c++/opcua-loader/opcua-server.marte -s Running
+
+## 2. Start SUP loader component
+
+${CODAC_ROOT}/bin/obj-factory --file ./src/test/c++/opcua-loader/55a0-opcua-loader.xml
+
+## 3. Interact with service
+
+## 3.1. Snapshot
+
+./target/bin/cfg-client --service 55a0::Cfg::Interface --verbose
+[INFO] Current value '[{"enabled":true,"geometry":{"r":0.1,"z":10,"angle":3.1416}}, .. ]'
+
+## 3.2. Load
+
+./target/bin/cfg-client --service 55a0::Cfg::Interface --config "[{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}},{\"enabled\":false,\"geometry\":{\"r\":0,\"z\":0,\"angle\":0}}]" --verbose
+

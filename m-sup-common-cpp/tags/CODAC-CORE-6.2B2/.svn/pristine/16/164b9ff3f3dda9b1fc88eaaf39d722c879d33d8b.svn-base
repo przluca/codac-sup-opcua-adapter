@@ -1,0 +1,68 @@
+#! /bin/bash
+#
+# Startup Script for CBS1-level COS aggregator/fanout
+#
+# chkconfig: - 31 76
+# description: Starts and stops CBS1-level COS aggregator/fanout daemon
+#
+
+#+======================================================================
+# $HeadURL$
+# $Id$
+#
+# Project       : CODAC Core System
+#
+# Description   : Startup Script for the CBS1 COS aggregator/fanout daemon
+#
+# Author(s)     : Bertrand Bauvir
+#
+# Copyright (c) : 2010-2019 ITER Organization,
+#                 CS 90 046
+#                 13067 St. Paul-lez-Durance Cedex
+#                 France
+#
+# This file is part of ITER CODAC software.
+# For the terms and conditions of redistribution or use of this software
+# refer to the file ITER-LICENSE.TXT located in the top level directory
+# of the distribution package.
+#
+#-======================================================================
+
+. codacenv
+
+#REQUSER="root"
+unset REQUSER
+
+CBS_PREFIX=${CBS_PREFIX:-CTRL}
+
+SERVICE="${CBS_PREFIX} COS aggregator/fan-out"
+
+case $1 in
+
+    start)
+
+	${CODAC_ROOT}/bin/log-msg info "Starting ${SERVICE} service ..."  
+	;;
+
+    stop)
+
+	${CODAC_ROOT}/bin/log-msg info "Stopping ${SERVICE} service ..."  
+	;;
+
+    *)
+
+	;;
+
+esac
+
+###########################################################################################
+
+NAMES=("${SERVICE} daemon")
+DAEMONS=("$CODAC_ROOT/bin/obj-factory")
+#ARGS=("-f ${CODAC_CONF}/sup/${CBS_PREFIX,,}-cos.xml")
+ARGS=("-f ${SUP_CONFIG_PATH}/${CBS_PREFIX,,}-cos.xml")
+LOGFILES=()
+
+###########################################################################################
+
+. $CODAC_ROOT/bin/services/service-startup

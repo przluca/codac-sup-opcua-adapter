@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+ $HeadURL$
+ $Id$
+
+ Project       : CODAC Core System - SDN core library - Regression tests (see https://bugzilla.iter.org/codac/show_bug.cgi?id=8733)
+ Description   : SDN topic definition file
+ Authors       : B.Bauvir (IO)
+ 
+ Copyright (c) : 2010-2019 ITER Organization,
+                 CS 90 046
+                 13067 St. Paul-lez-Durance Cedex
+                 France
+
+ This file is part of ITER CODAC software.
+ For the terms and conditions of redistribution or use of this software
+ refer to the file ITER-LICENSE.TXT located in the top level directory
+ of the distribution package.
+-->
+<!-- Implicit payload size and multicast mapping -->
+<topic name="Bug8733" description="Topic definition file (see https://bugzilla.iter.org/codac/show_bug.cgi?id=8733)" version="1.0" uid="0">
+  <attribute rank="2" name="packet-counter" dataType="uint64_t" qualifier="samplenb"/>
+  <attribute rank="3" name="packet-timestamp" dataType="uint64_t" qualifier="timestamp"/>
+  <attribute rank="4" name="f1@rank4" dataType="float"/>
+  <attribute rank="4" name="f2@rank4" dataType="float"/>
+  <attribute rank="5" name="f3@rank5" dataType="float"/>
+  <attribute rank="7" name="f4@rank7" dataType="float"/>
+</topic>

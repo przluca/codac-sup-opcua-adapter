@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<object application="codac:obj-factory" name="gbs-tcn-health" xmlns="urn:x-iter:plant:2015" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2015 Plant.xsd">
+  <libraries>
+    <!-- Load basic library -->
+    <library>libsup-config.so</library> <!-- CFG related classes -->
+  </libraries>
+  <instances>
+    <instance name="gtdb" type="sup::core::MsgableTypeDatabase">
+      <message>
+Register('
+{"type":"55a0::FloatArray_t/v1.0",
+ "multiplicity":32,
+ "element":{"type":"float32"}
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::Config_t/v1.0",
+ "attributes":[{"M":{"type":"55a0::FloatArray_t/v1.0"}},
+               {"Y0":{"type":"55a0::FloatArray_t/v1.0"}},
+               {"WOTime":{"type":"uint64"}},
+               {"EOTime":{"type":"uint64"}}
+              ]
+}
+')
+      </message>
+    </instance>
+    <instance name="55a0-adapter" type="sup::core::OPCUAPlantSystemAdapter">
+      <parameter name="verbose">true</parameter>
+      <parameter name="serverUrl">opc.tcp://localhost:4840</parameter>
+      <message>Create('{"name":"","type":"55a0::Config_t/v1.0"}')</message>
+      <!-- Safely connects to MARTe2 OPC UA server using numeric identifier -->
+      <!--<message>Associate('{"name":"[0].enabled","channel":"ns=1;s=Service.running"}')</message>-->
+      <!--<message>Associate('{"name":"[0].geometry.angle","channel":"ns=1;s=Float64"}')</message>-->
+      <message>Associate('{"name":"M[0]","channel":"ns=1;i=3005"}')</message>
+      <message>Associate('{"name":"Y0[0]","channel":"ns=1;i=3006"}')</message>
+      <message>Start()</message>
+    </instance>
+    <instance name="55a0-service" type="sup::core::ConfigurationService">
+      <parameter name="verbose">true</parameter>
+      <parameter name="service">55a0::Cfg::Interface</parameter>
+      <parameter name="handler">55a0-adapter</parameter>
+    </instance>
+  </instances>
+</object>

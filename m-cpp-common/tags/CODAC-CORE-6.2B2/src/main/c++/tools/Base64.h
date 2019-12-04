@@ -1,0 +1,296 @@
+/******************************************************************************
+* $HeadURL: https://svnpub.iter.org/codac/iter/codac/dev/units/m-cpp-common/tags/CODAC-CORE-6.2B2/src/main/c++/tools/Base64.h $
+* $Id: Base64.h 100889 2019-07-19 06:46:30Z bauvirb $
+*
+* Project       : CODAC Core System
+*
+* Description   : Base64 encoding and decoding functions
+*
+* Author        : Bertrand Bauvir
+*
+* Copyright (c) : 2010-2019 ITER Organization,
+*                 CS 90 046
+*                 13067 St. Paul-lez-Durance Cedex
+*                 France
+*
+* This file is part of ITER CODAC software.
+* For the terms and conditions of redistribution or use of this software
+* refer to the file ITER-LICENSE.TXT located in the top level directory
+* of the distribution package.
+******************************************************************************/
+
+#ifndef _Base64_H
+#define _Base64_H
+
+/**
+ * @file Base64.h
+ * @brief Header file for Base64 encoding conversion methods.
+ * @date 18/04/2017
+ * @author Bertrand Bauvir (IO)
+ * @copyright 2010-2017 ITER Organization
+ * @detail This header file contains the definition of Base64 encoding conversion methods.
+ */
+
+// Global header files
+
+// Local header files
+
+#include "BasicTypes.h" // Condensed integer type definition, RET_STATUS, etc.
+
+// Constants
+
+// Type definition
+
+namespace ccs {
+
+namespace HelperTools {
+
+// Global variables
+
+// 6-bits values are mapped to the following symbols
+static const ccs::types::char8 __base64_alphabet [] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; 
+
+// '+' ASCII character corresponds to integer 43
+// '/' ASCII character corresponds to integer 47
+// '[0-9]' correspond to [48-57]
+// '[A-Z]' correspond to [65-90]
+// '[a-z]' correspond to [97-122]
+
+
+// ASCII character - 43 is mapped to
+static const ccs::types::uint8 __base64_reverse [] = { 
+  62, 
+ 255, 255, 255, // Invalid - These ASCII characters are not part of the base64 alphabet
+  63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,   
+ 255, 255, 255, 255, 255, 255, 255, // Invalid
+   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 
+ 255, 255, 255, 255, 255, 255, // Invalid
+  26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
+}; 
+
+// Function declaration
+
+// Function definition
+
+static inline ccs::types::uint32 ComputeEncodedBufferSize (const ccs::types::uint32 binary_size)
+{ 
+
+  ccs::types::uint32 buffer_size = (binary_size / 3u);
+
+  if ((binary_size % 3u) != 0u)
+    {
+      buffer_size++;
+    }
+
+  buffer_size *= 4u;
+
+  return buffer_size; 
+
+}
+
+static inline ccs::types::uint32 ComputeBinaryBufferSize (const ccs::types::char8 * const encoded_buffer) 
+{ 
+
+  ccs::types::uint32 encoded_size = static_cast<ccs::types::uint32>(strlen(encoded_buffer)); // Nil terminated buffer
+  ccs::types::uint32 buffer_size = 3u * (encoded_size / 4u);
+
+  if (encoded_buffer[encoded_size-1] == '=')
+    {
+      buffer_size--;
+    }
+
+  if (encoded_buffer[encoded_size-2] == '=')
+    {
+      buffer_size--;
+    }
+
+  return buffer_size;
+
+}
+
+static inline void Base64EncodeBlock (const ccs::types::uint8 * const binary_block, ccs::types::char8 * const encoded_block) // 24-bits in, 4 char out
+{
+
+  ccs::types::uint32 index = 0u;
+
+  index = (binary_block[0] >> 2) & 0x3Fu; encoded_block[0] = __base64_alphabet[index];
+  index = ((binary_block[0] << 4) & 0x30u) + ((binary_block[1] >> 4) & 0x0Fu); encoded_block[1] = __base64_alphabet[index];
+  index = ((binary_block[1] << 2) & 0x3Cu) + ((binary_block[2] >> 6) & 0x03u); encoded_block[2] = __base64_alphabet[index];
+  index = binary_block[2] & 0x3Fu; encoded_block[3] = __base64_alphabet[index];
+
+  return;
+
+}
+
+static inline void Base64DecodeBlock (ccs::types::uint8 * const binary_block, const ccs::types::char8 * const encoded_block) // 24-bits out, 4 char in
+{
+
+  ccs::types::char8 encoded_bits [4]; // Do not modify the encoded buffer !
+
+  for (ccs::types::uint32 index = 0u; index < 4u; index++) 
+    {
+      if ((encoded_block[index] >= '+') && (encoded_block[index] <= 'z')) 
+        {
+          encoded_bits[index] = encoded_block[index] - '+'; // Offset the ASCII characters to the lowest in the alphabet
+        }
+    }
+
+  binary_block[0] = static_cast<ccs::types::uint8>(((__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[0])] << 2) & 0xFCu) + ((__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[1])] >> 4) & 0x03u));
+
+  // '=' has become ('=' - 43) = 18 
+
+  if (encoded_bits[2] == 18)
+    {
+      binary_block[1] = static_cast<ccs::types::uint8>((__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[1])] << 4) & 0xF0u);
+      binary_block[2] = 0u;
+    }
+  else
+    {
+      binary_block[1] = static_cast<ccs::types::uint8>((__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[1])] << 4) & 0xF0u) + ((__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[2])] >> 2) & 0x0Fu);
+      binary_block[2] = static_cast<ccs::types::uint8>((__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[2])] << 6) & 0xC0u);
+    }
+
+  if (encoded_bits[3] != 18)
+    {
+      binary_block[2] += static_cast<ccs::types::uint8>(__base64_reverse[static_cast<ccs::types::uint32>(encoded_bits[3])] & 0x3Fu);
+    }
+
+  return;
+
+}
+
+/**
+ * @brief Base64 encoding operation.
+ * @detail This method encodes a binary buffer in its base64 string equivalent.
+ * Base64 encoding produces string buffers with size multiple of 4.
+ * @param binary_buffer The buffer to be encoded.
+ * @param binary_size Size of buffer.
+ * @param encoded_buffer Nil terminated encoded string buffer.
+ * @param buffer_size Size of receiving buffer.
+ *
+ * @return Size of the encoded nil terminated string, 0u in case of error.
+ */
+
+static inline ccs::types::uint32 Base64Encode (const ccs::types::uint8 * const binary_buffer, ccs::types::uint32 binary_size, ccs::types::char8 * const encoded_buffer, const ccs::types::uint32 buffer_size) 
+{
+
+  ccs::types::uint32 process_size = 0u;
+
+  bool status = ((NULL_PTR_CAST(ccs::types::char8*) != encoded_buffer) && (buffer_size > ComputeEncodedBufferSize(binary_size))); // Nil terminated string
+
+  if (status)
+    {
+      const ccs::types::uint8 * p_in = binary_buffer;
+      ccs::types::char8* p_out = encoded_buffer;
+
+      while (binary_size >= 3u) 
+        { 
+          Base64EncodeBlock(p_in, p_out); 
+          p_in += 3; p_out += 4; binary_size -= 3u; process_size += 4u; 
+        }
+
+      // The last binary block
+      if (binary_size == 2u) 
+        { 
+          ccs::types::uint8 binary_block [3]; 
+          binary_block[0] = *p_in; 
+          binary_block[1] = p_in[1]; 
+          binary_block[2] = 0u; 
+          Base64EncodeBlock(static_cast<ccs::types::uint8*>(binary_block), p_out); 
+          p_out[3] = '='; 
+          p_out += 4; process_size += 4u; 
+        }
+
+      if (binary_size == 1u) 
+        { 
+          ccs::types::uint8 binary_block [3]; 
+          binary_block[0] = *p_in; 
+          binary_block[1] = 0u; 
+          binary_block[2] = 0u; 
+          Base64EncodeBlock(static_cast<ccs::types::uint8*>(binary_block), p_out); 
+          p_out[2] = '='; 
+          p_out[3] = '='; 
+          p_out += 4; process_size += 4u; 
+        }
+
+      *p_out = 0; // Nil terminated string
+    }
+
+  return process_size;
+
+}
+
+/**
+ * @brief Base64 decoding operation.
+ * @detail This method decodes a base64 encoded binary buffer. The base64
+ * encoding produces string buffers with size multiple of 4. Decoding is
+ * performed using 4 characters long blocks. The receiving binary buffer
+ * must have a size compatible with the encoded string, see ccs::HelperTools::
+ * @param binary_buffer The buffer receiving the decoded content.
+ * @param binary_size Size of buffer.
+ * @param encoded_buffer Nil terminated encoded string buffer.
+ *
+ * @return Size of the resulting binary decoding, 0u in case of error.
+ */
+
+static inline ccs::types::uint32 Base64Decode (ccs::types::uint8 * const binary_buffer, ccs::types::uint32 binary_size, const ccs::types::char8 * const encoded_buffer) 
+{
+
+  ccs::types::uint32 process_size = 0u;
+
+  bool status = ((NULL_PTR_CAST(ccs::types::uint8*) != binary_buffer) && 
+                 (NULL_PTR_CAST(const ccs::types::char8*) != encoded_buffer));
+
+  if (status)
+    {
+      status = ((strlen(encoded_buffer) % 4u == 0u) && (binary_size >= ComputeBinaryBufferSize(encoded_buffer)));
+    }
+
+  if (status)
+    {
+      ccs::types::uint32 encoded_size = strlen(encoded_buffer); // Nil terminated string
+
+      ccs::types::uint8* p_out = binary_buffer;
+      const ccs::types::char8* p_in = encoded_buffer;
+      
+      while ((binary_size > 3u) && (encoded_size > 4u)) 
+        { 
+          Base64DecodeBlock(p_out, p_in); 
+          p_in += 4; p_out += 3; binary_size -= 3u; encoded_size -= 4u; process_size += 3u; 
+        }
+      
+      // The last encoded block
+      if ((binary_size > 2u) && (p_in[2] != '=') && (p_in[3] != '=')) 
+        { 
+          Base64DecodeBlock(p_out, p_in); 
+          p_in += 4; p_out += 3; process_size += 3u; 
+        }
+
+      if ((binary_size > 1u) && (p_in[2] != '=') && (p_in[3] == '=')) 
+        { 
+          ccs::types::uint8 binary_block [3]; 
+          Base64DecodeBlock(static_cast<ccs::types::uint8*>(binary_block), p_in); 
+          *p_out = binary_block[0]; 
+          p_out[1] = binary_block[1]; 
+          p_in += 4; p_out += 2; process_size += 2u; 
+        }
+
+      if ((binary_size > 0u) && (p_in[2] == '=') && (p_in[3] == '='))
+        { 
+          ccs::types::uint8 binary_block [3]; 
+          Base64DecodeBlock(static_cast<ccs::types::uint8*>(binary_block), p_in); 
+          *p_out = binary_block[0]; 
+          p_in += 4; p_out += 1; process_size += 1u; 
+        }
+    }
+
+  return process_size;
+
+}
+
+} // namespace HelperTools
+
+} // namespace ccs
+
+#endif // _Base64_H
+

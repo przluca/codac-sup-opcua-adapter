@@ -1,0 +1,14 @@
+Requires:
+
+- m-cpp-common
+  - Logging API
+  - AnyObject support
+  - AnyType support
+- m-cpp-tools
+  - PVA wrapper classes
+- m-epics
+  - PVA core classes and infrastructure
+
+Used by:
+
+- TBD

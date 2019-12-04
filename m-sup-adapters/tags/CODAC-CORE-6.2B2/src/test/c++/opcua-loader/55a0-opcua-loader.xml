@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+
+<object application="codac:obj-factory" name="gbs-tcn-health" xmlns="urn:x-iter:plant:2015" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:x-iter:plant:2015 Plant.xsd">
+  <libraries>
+    <!-- Load basic library -->
+    <library>libsup-config.so</library> <!-- CFG related classes -->
+    <library>libsup-core.so</library> <!-- CFG related classes -->
+  </libraries>
+  <instances>
+    <instance name="gtdb" type="sup::core::MsgableTypeDatabase">
+     <parameter name="verbose">true</parameter>
+    <!-- SCU type description  -->
+      <message>
+Register('
+{"type":"55a0::FunctionEqual_t/v1.0",
+ "attributes":[{"Param1":{"type":"uint8"}},
+               {"Param2":{"type":"uint8"}}
+              ]
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::FunctionThreshold_t/v1.0",
+ "attributes":[{"Param1":{"type":"uint8"}},
+               {"Param2":{"type":"uint8"}}
+              ]
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::Equal_t/v1.0",
+ "multiplicity":11,
+ "element":{"type":"55a0::FunctionEqual_t/v1.0"}
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::Threshold_t/v1.0",
+ "multiplicity":11,
+ "element":{"type":"55a0::FunctionThreshold_t/v1.0"}
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::Mode_t/v1.0",
+ "attributes":[{"FunctionEqual":{"type":"55a0::Equal_t/v1.0"}},
+               {"FunctionThreshold":{"type":"55a0::Threshold_t/v1.0"}}
+              ]
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::Mode_Config_t/v1.0",
+ "multiplicity":16,
+ "element":{"type":"55a0::Mode_t/v1.0"}
+}
+')
+      </message>
+      <message>
+Register('
+{"type":"55a0::SCU_t/v1.0",
+ "attributes":[{"ID":{"type":"uint8"}},
+               {"Mode_Config":{"type":"55a0::Mode_Config_t/v1.0"}}
+              ]
+}
+')
+      </message>
+    <!--  SCUs array -->
+      <message>
+Register('
+{"type":"55a0::SCUs_Config_t/v1.0",
+ "multiplicity":20,
+ "element":{"type":"55a0::SCU_t/v1.0"}
+}
+')
+      </message>
+    </instance>
+    <instance name="55a0-adapter" type="sup::core::Open62541PlantSystemAdapter">
+      <parameter name="verbose">true</parameter>
+      <parameter name="serverUrl">opc.tcp://192.168.129.89:4840</parameter>
+      <message>Create('{"name":"","type":"55a0::SCUs_Config_t/v1.0"}')</message>
+      <message>Associate('{"name":"","type":"55a0::SCUs_Config_t/v1.0","nodeId":"ns=3;s='SCUs_Config'.'SCU_Config'","methodId":"ns=3;s='OPC_UA_Method_DB'", "extensionObject":"yes"}')</message>
+<!--      <message>Associate('{"name":"Y0","nodeId":"ns=1;i=3003"}')</message> -->
+      <message>Start()</message>
+    </instance>
+    <instance name="55a0-service" type="sup::core::ConfigurationService">
+      <parameter name="verbose">true</parameter>
+      <parameter name="service">55a0::Cfg::Interface</parameter>
+      <parameter name="handler">55a0-adapter</parameter>
+    </instance>
+  </instances>
+</object>
