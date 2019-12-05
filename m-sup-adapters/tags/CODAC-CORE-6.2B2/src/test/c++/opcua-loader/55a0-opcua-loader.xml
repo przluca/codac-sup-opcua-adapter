@@ -84,7 +84,7 @@ Register('
       <parameter name="verbose">true</parameter>
       <parameter name="serverUrl">opc.tcp://192.168.129.89:4840</parameter>
       <message>Create('{"name":"","type":"55a0::SCUs_Config_t/v1.0"}')</message>
-      <message>Associate('{"name":"","type":"55a0::SCUs_Config_t/v1.0","nodeId":"ns=3;s='SCUs_Config'.'SCU_Config'","methodId":"ns=3;s='OPC_UA_Method_DB'", "extensionObject":"yes"}')</message>
+      <message>Associate('{"name":"","type":"55a0::SCUs_Config_t/v1.0","nodeId":"ns=3;s='SCUs_Config'.'SCU_Config'","methodId":"ns=3;s='OPC_UA_Method_DB'.Method", "extensionObject":"yes"}')</message>
 <!--      <message>Associate('{"name":"Y0","nodeId":"ns=1;i=3003"}')</message> -->
       <message>Start()</message>
     </instance>

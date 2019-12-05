@@ -94,8 +94,7 @@ public:
                      const std::shared_ptr<const ccs::types::AnyType> &type,
                      ccs::types::uint32 index);
 
-    bool AddMethod(const ccs::types::char8 *const methodId,
-                   const ccs::types::uint32 index);
+    bool AddMethod(const std::string methodId);
 
     bool SetExtensionObject(const ccs::types::char8 *const extObj,
                             const ccs::types::uint32 index);

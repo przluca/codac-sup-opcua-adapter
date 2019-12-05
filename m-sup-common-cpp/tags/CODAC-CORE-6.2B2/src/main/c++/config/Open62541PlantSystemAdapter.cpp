@@ -42,13 +42,15 @@ private:
     ccs::types::string __ua_srvr;
     ccs::base::Open62541Client *__ua_clnt;
 
-    std::vector<std::tuple<std::string, std::string, const std::shared_ptr<const ccs::types::ScalarType>, std::string, std::string>> __assoc;
+    std::vector<std::tuple<std::string, std::string, const std::shared_ptr<const ccs::types::ScalarType>, std::string>> __assoc;
 
     ccs::types::string eoNodeId;
+    ccs::types::string methodId;
 
     ccs::types::uint32 nodeCounter;
 
     ccs::types::uint32 bodyLength;
+    ccs::types::uint32 entryArraySize;
 
 public:
 
@@ -75,13 +77,15 @@ public:
     bool CreateChannelAssociation(const std::string &name,
                                   const std::string &chan,
                                   const std::string &type,
-                                  const std::string &mthd,
                                   const std::string &extobj);
     bool StartOPCUAClient(void);
 
     bool SetOPCUAStructure(const std::string extobj);
 
-    bool SetBodyLength(ccs::types::AnyValue * cache, const ccs::types::uint32 length);
+    bool SetMethod(const std::string mthd);
+
+    bool SetBodyLength(ccs::types::AnyValue *cache,
+                       const ccs::types::uint32 length);
 
 };
 
@@ -224,6 +228,7 @@ bool Open62541PlantSystemAdapter::ProcessMessage(const char *msg) {
 
                 if (status) {
                     status = ccs::HelperTools::Strip(mthd, "\"");
+                    __impl->SetMethod(std::string(mthd));
                 }
 
                 if (!status) { // MethodId is optional
@@ -253,7 +258,7 @@ bool Open62541PlantSystemAdapter::ProcessMessage(const char *msg) {
 
             if (status) {
                 log_info("Open62541PlantSystemAdapter::ProcessMessage - Create association ..");
-                status = __impl->CreateChannelAssociation(std::string(name), std::string(chan), std::string(type), std::string(mthd), std::string(extobj));
+                status = __impl->CreateChannelAssociation(std::string(name), std::string(chan), std::string(type), std::string(extobj));
 
                 if (status) {
                     log_info(".. success");
@@ -324,7 +329,6 @@ bool Open62541PlantSystemAdapterImpl::ReadConfiguration(const std::string &name,
     log_info("Reading Configuration...");
 
     for (ccs::types::uint32 index = 0u; (index < __assoc.size()) && status; index += 1u) {
-        //log_info("Open62541PlantSystemAdapterImpl::ReadConfiguration - Update cache '%s' attribute ..", std::get < 1 > (__assoc[index]).c_str());
 
         memcpy(ccs::HelperTools::GetAttributeReference(__config_cache, std::get < 0 > (__assoc[index]).c_str()),
                __ua_clnt->GetVariable(std::get < 1 > (__assoc[index]).c_str())->GetInstance(),
@@ -357,11 +361,13 @@ bool Open62541PlantSystemAdapterImpl::LoadConfiguration(const std::string &name,
     if (status) {
         // Update cache
         *__config_cache = value; // AnyValue::operator= (const AnyValue&)
+        log_info("Open62541PlantSystemAdapterImpl::LoadConfiguration - Verify checksum ..");
         status = (checksum
                 == ccs::HelperTools::CyclicRedundancyCheck < ccs::types::uint32
                         > (reinterpret_cast<ccs::types::uint8*>(__config_cache->GetInstance()), __config_cache->GetSize(), seed));
     }
-    if(status) log_info("YES");
+    if (status)
+        log_info("... done!");
 
     log_info("Open62541PlantSystemAdapterImpl::LoadConfiguration - Update from cache ..");
     for (ccs::types::uint32 index = 0u; (status && (index < __assoc.size())); index += 1u) {
@@ -385,15 +391,15 @@ bool Open62541PlantSystemAdapterImpl::LoadConfiguration(const std::string &name,
                __ua_clnt->GetVariable(std::get < 1 > (__assoc[index]).c_str())->GetSize());
     }
 
-//    if (status) {
-//        log_info("Open62541PlantSystemAdapterImpl::LoadConfiguration - .. verify checksum again ..");
-//        status = (checksum
-//                == ccs::HelperTools::CyclicRedundancyCheck < ccs::types::uint32
-//                        > (reinterpret_cast<ccs::types::uint8*>(__config_cache->GetInstance()), __config_cache->GetSize(), seed));
-//    }
+    if (status) {
+        log_info("Open62541PlantSystemAdapterImpl::LoadConfiguration - .. verify checksum again ..");
+        status = (checksum
+                == ccs::HelperTools::CyclicRedundancyCheck < ccs::types::uint32
+                        > (reinterpret_cast<ccs::types::uint8*>(__config_cache->GetInstance()), __config_cache->GetSize(), seed));
+    }
 
     if (status) {
-        log_info("Open62541PlantSystemAdapterImpl::LoadConfiguration - .. success");
+        log_info("Open62541PlantSystemAdapterImpl::LoadConfiguration - .. success!");
     }
     else {
         log_error("Open62541PlantSystemAdapterImpl::LoadConfiguration - .. failure");
@@ -437,7 +443,6 @@ bool Open62541PlantSystemAdapterImpl::CreateConfigurationCache(const std::string
 bool Open62541PlantSystemAdapterImpl::CreateChannelAssociation(const std::string &name,
                                                                const std::string &chan,
                                                                const std::string &type,
-                                                               const std::string &mthd,
                                                                const std::string &extobj) {
 
     bool status = (static_cast<ccs::types::AnyValue*>(NULL) != __config_cache);
@@ -462,7 +467,7 @@ bool Open62541PlantSystemAdapterImpl::CreateChannelAssociation(const std::string
                 char bufferName[name.length() + cName.length()];
                 std::sprintf(bufferName, "%s.%s", name.c_str(), cName.c_str());
                 const std::string cType = (std::dynamic_pointer_cast<const ccs::types::CompoundType>(desc)->GetAttributeType(index))->GetName();
-                this->CreateChannelAssociation(bufferName, chan, cType.c_str(), mthd, extobj);
+                this->CreateChannelAssociation(bufferName, chan, cType.c_str(), extobj);
             }
         }
     }
@@ -471,22 +476,18 @@ bool Open62541PlantSystemAdapterImpl::CreateChannelAssociation(const std::string
         for (ccs::types::uint32 index = 0u; (status && (index < nElem)); index += 1u) {
             char bufferName[name.length() + 5];
             std::sprintf(bufferName, "%s.[%d]", name.c_str(), index);
-            this->CreateChannelAssociation(bufferName, chan, (std::dynamic_pointer_cast<const ccs::types::ArrayType>(desc)->GetElementType())->GetName(), mthd,
+            this->CreateChannelAssociation(bufferName, chan, (std::dynamic_pointer_cast<const ccs::types::ArrayType>(desc)->GetElementType())->GetName(),
                                            extobj);
         }
     }
     else if (ccs::HelperTools::Is < ccs::types::ScalarType > (desc)) {
-
-//        if (status) {
-//            status = ccs::HelperTools::HasAttribute(__config_cache, name.c_str());
-//        }
 
         // Register association
         if (status) {
             char bufferChan[chan.length() + 10];
             std::sprintf(bufferChan, "chan_%d", nodeCounter);
             std::string newChan = bufferChan;
-            __assoc.push_back(std::make_tuple(name, newChan, std::dynamic_pointer_cast<const ccs::types::ScalarType>(desc), mthd, extobj));
+            __assoc.push_back(std::make_tuple(name, newChan, std::dynamic_pointer_cast<const ccs::types::ScalarType>(desc), extobj));
             nodeCounter++;
         }
     }
@@ -503,23 +504,21 @@ bool Open62541PlantSystemAdapterImpl::StartOPCUAClient(void) {
         status = (static_cast<ccs::base::Open62541Client*>(NULL) != __ua_clnt);
     }
 
-    // Configure OPCUA client
-    // Setting Method
+    log_info("ENTRYARRAYSIZE = %d", entryArraySize);
+
+    // Setting Parameters for the OPCUA Client
     __ua_clnt->SetNumberOfNodes(__assoc.size());
     __ua_clnt->SetEONodeId(eoNodeId);
     __ua_clnt->SetBodyLength(16740);
+    __ua_clnt->AddMethod(methodId);
 
     for (ccs::types::uint32 index = 0u; (status && (index < __assoc.size())); index += 1u) {
         //using namespace std::placeholders;
 
         status = __ua_clnt->AddVariable(std::get < 1 > (__assoc[index]).c_str(), ccs::types::AnyputVariable, std::get < 2 > (__assoc[index]), index);
-//        status = __ua_clnt->AddVariable(std::get < 0 > (__assoc[index]).c_str(), ccs::types::AnyputVariable, std::get < 2 > (__assoc[index]), index);
 
         if (std::get < 3 > (__assoc[index]).compare("NULL") != 0) {
-            __ua_clnt->AddMethod(std::get < 3 > (__assoc[index]).c_str(), index);
-        }
-        if (std::get < 4 > (__assoc[index]).compare("NULL") != 0) {
-            __ua_clnt->SetExtensionObject(std::get < 4 > (__assoc[index]).c_str(), index);
+            __ua_clnt->SetExtensionObject(std::get < 3 > (__assoc[index]).c_str(), index);
         }
     }
 
@@ -535,7 +534,13 @@ bool Open62541PlantSystemAdapterImpl::SetOPCUAStructure(const std::string extobj
     return true;
 }
 
-bool Open62541PlantSystemAdapterImpl::SetBodyLength(ccs::types::AnyValue * cache, const ccs::types::uint32 length) {
+bool Open62541PlantSystemAdapterImpl::SetMethod(const std::string mthd) {
+    ccs::HelperTools::SafeStringCopy(methodId, mthd.c_str(), STRING_MAX_LENGTH);
+    return true;
+}
+
+bool Open62541PlantSystemAdapterImpl::SetBodyLength(ccs::types::AnyValue *cache,
+                                                    const ccs::types::uint32 length) {
     return true;
 }
 
@@ -554,6 +559,7 @@ Open62541PlantSystemAdapterImpl::Open62541PlantSystemAdapterImpl(void) {
     __config_cache = static_cast<ccs::types::AnyValue*>(NULL);
 
     nodeCounter = 0u;
+    entryArraySize = 0u;
 
     // Create CA client
     __ua_clnt = static_cast<ccs::base::Open62541Client*>(NULL);

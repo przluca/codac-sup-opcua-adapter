@@ -6,7 +6,7 @@
  *
  * Description   : Infrastructure tools - Prototype
  *
- * Author        : Bertrand Bauvir
+ * Author        : Luca Porzio
  *
  * Copyright (c) : 2010-2019 ITER Organization,
  *                 CS 90 046
@@ -114,8 +114,8 @@ public:
 
     UA_Client *client;
 
-    ccs::types::CompoundType *m_type; // Introspectable type definition for the variable cache ..
-    ccs::types::AnyValue *m_value; // Introspectable variable mapped to the whole cache ..
+//    ccs::types::CompoundType *m_type; // Introspectable type definition for the variable cache ..
+//    ccs::types::AnyValue *m_value; // Introspectable variable mapped to the whole cache ..
 
     bool m_initialized;
 
@@ -144,10 +144,10 @@ public:
 
     LUTable<VariableInfo_t> *m_var_table;
 
-    const ccs::types::char8 **methodId;
     const ccs::types::char8 **extObj;
 
     ccs::types::char8 *eoNodeId;
+    ccs::types::char8 *methodId;
 
     // Initializer methods
     bool AddVariable(const ccs::types::char8 *const name,
@@ -155,8 +155,7 @@ public:
                      const std::shared_ptr<const ccs::types::AnyType> &type,
                      ccs::types::uint32 index);
 
-    bool AddMethod(const ccs::types::char8 *const methodId,
-                   const ccs::types::uint32 index);
+    bool AddMethod(const std::string methodId);
 
     bool SetExtensionObject(const ccs::types::char8 *const extObj,
                             const ccs::types::uint32 index);
@@ -277,7 +276,6 @@ void dataChange(UA_Client *client,
                         ccs::base::objPtr->dataPtr = &reinterpret_cast<ccs::types::uint8*>(ccs::base::objPtr->dataPtr)[eos[i].content.encoded.body.length];
                     }
                 }
-                log_info("Value copied");
             }
             ccs::types::uint32 actualBodyLength = (static_cast<ccs::types::uint32>(value->value.arrayLength)
                     * static_cast<ccs::types::uint32>(eos[0u].content.encoded.body.length));
@@ -289,26 +287,13 @@ void dataChange(UA_Client *client,
             (void) UA_ExtensionObject_copy(valuePtr, eos);
             ok = memcpy(ccs::base::objPtr->dataPtr, eos->content.encoded.body.data, static_cast<ccs::types::uint32>(eos->content.encoded.body.length));
             if (ok) {
-                log_info("Value copied");
                 (void) UA_ExtensionObject_clear(eos);
                 UA_ExtensionObject_delete(eos);
             }
         }
     }
 
-
-    if (strcmp(ccs::base::objPtr->extObj[monId - 1], "NULL") == 0) {
-
-        // Update cache
-        ccs::base::Open62541ClientImpl::VariableInfo_t varInfo;
-
-        if ((ccs::base::objPtr->m_var_table)->GetValue(varInfo, monId - 1) != STATUS_SUCCESS) {
-            log_warning("Open62541ClientImpl::dataChange - LUTable<>::GetValue failed");
-        }
-    }
-
     return;
-
 }
 // Function definition
 
@@ -322,7 +307,7 @@ void OPCUAInterface_Thread_PRBL(ccs::base::Open62541ClientImpl *self) {
     self->tempDataPtr = reinterpret_cast<ccs::types::uint8*>(self->dataPtr);
 
     // Create variable cache
-    self->m_value = new (std::nothrow) ccs::types::AnyValue(self->m_type);
+//    self->m_value = new (std::nothrow) ccs::types::AnyValue(self->m_type);
 
     // Create subscription
     UA_CreateSubscriptionRequest subRequest = UA_CreateSubscriptionRequest_default();
@@ -355,11 +340,6 @@ void OPCUAInterface_Thread_PRBL(ccs::base::Open62541ClientImpl *self) {
     ccs::types::string name;
 
     for (ccs::types::uint32 index = 0; index < (self->m_var_table)->GetSize(); index += 1u) {
-
-        if ((self->m_var_table)->GetKeyword(name, index) != STATUS_SUCCESS) {
-            log_warning("%s - LUTable<>::GetKeyword failed", __FUNCTION__);
-            continue;
-        }
 
         ccs::base::Open62541ClientImpl::VariableInfo_t varInfo;
 
@@ -436,13 +416,6 @@ void OPCUAInterface_Thread_CB(ccs::base::Open62541ClientImpl *self) {
 
     for (ccs::types::uint32 index = 0u; (ok && (index < (self->m_var_table)->GetSize())); index += 1u) {
 
-        ccs::types::string name;
-
-        if ((self->m_var_table)->GetKeyword(name, index) != STATUS_SUCCESS) {
-            log_warning("%s - LUTable<>::GetKeyword failed", __FUNCTION__);
-            continue;
-        }
-
         ccs::base::Open62541ClientImpl::VariableInfo_t varInfo;
 
         if ((self->m_var_table)->GetValue(varInfo, index) != STATUS_SUCCESS) {
@@ -453,11 +426,10 @@ void OPCUAInterface_Thread_CB(ccs::base::Open62541ClientImpl *self) {
         if ((varInfo.direction == ccs::types::InputVariable) || (varInfo.update != true)) {
             continue; // Nothing to do for this channel
         }
-        //else {
-//            memcpy(varInfo.reference, ccs::HelperTools::GetAttributeReference(self->m_value, name), varInfo.__type->GetSize());
-//            log_info("VAL: %d", *reinterpret_cast<ccs::types::uint8*>(varInfo.reference));
-//            (self->m_var_table)->SetValue(varInfo, index);
-        //}
+
+//        memcpy(varInfo.reference, ccs::HelperTools::GetAttributeReference(self->m_value, name), varInfo.__type->GetSize());
+//        log_info("VAL: %d", *reinterpret_cast<ccs::types::uint8*>(varInfo.reference));
+//        (self->m_var_table)->SetValue(varInfo, index);
 
     }
 
@@ -465,37 +437,45 @@ void OPCUAInterface_Thread_CB(ccs::base::Open62541ClientImpl *self) {
     if ((self->m_var_table)->GetValue(var, 1) != STATUS_SUCCESS) {
         log_warning("%s - LUTable<>::GetValue failed", __FUNCTION__);
     }
-   if (var.update == true) {
+    if (var.update == true) {
 
         ccs::types::string name;
+        ccs::types::string methodName;
+
         //Parsing method nodeId
         std::string delimiter = ";";
         UA_ReadValueId *readValues = UA_ReadValueId_new();
         readValues[0u].attributeId = 13u; /* UA_ATTRIBUTEID_VALUE */
 
-//    if (strcmp(self->methodId[index], "NULL") != 0) {
-//        ccs::types::uint32 mns;
-//        std::string mnsName = self->methodId[index];
-//        std::string ms = mnsName.substr(0, mnsName.find(delimiter));
-//        mns = static_cast<ccs::types::uint32>(std::stoul(ms.erase(0, 3), nullptr, 0));
-//
-//        std::string midName = self->methodId[index];
-//        if (midName.find("i=") != std::string::npos) {
-//            ccs::types::uint32 identifier;
-//            identifier = static_cast<ccs::types::uint32>(std::stoul(midName.erase(0, 7), nullptr, 0));
-//        }
-//        else if (midName.find("s=") != std::string::npos) {
-//            std::string identifier;
-//            identifier = midName.erase(0, 7);
-//            size_t pos;
-//            pos = identifier.find("\'");
-//            while (pos != std::string::npos) {
-//                identifier.replace(pos, 1, "\"");
-//                pos = identifier.find("\'");
-//            }
-//        }
-//    }
+        strcpy(methodName, self->methodId);
 
+        ccs::types::uint32 mns;
+
+        std::string mnsName = methodName;
+
+        std::string ms = mnsName.substr(0, mnsName.find(delimiter));
+        mns = static_cast<ccs::types::uint32>(std::stoul(ms.erase(0, 3), nullptr, 0));
+
+        std::string midName = methodName;
+        if (midName.find("i=") != std::string::npos) {
+            ccs::types::uint32 identifier;
+            identifier = static_cast<ccs::types::uint32>(std::stoul(midName.erase(0, 7), nullptr, 0));
+            //
+        }
+        else if (midName.find("s=") != std::string::npos) {
+            std::string identifier;
+            identifier = midName.erase(0, 7);
+            size_t pos;
+            pos = identifier.find("\'");
+            while (pos != std::string::npos) {
+                identifier.replace(pos, 1, "\"");
+                pos = identifier.find("\'");
+            }
+            midName = "";
+            midName = identifier;
+        }
+
+        //Parsing Structure Node ID
         strcpy(name, self->eoNodeId);
 
         ccs::types::uint32 ns;
@@ -520,8 +500,7 @@ void OPCUAInterface_Thread_CB(ccs::base::Open62541ClientImpl *self) {
                 identifier.replace(pos, 1, "\"");
                 pos = identifier.find("\'");
             }
-//        readValues[0u].nodeId = UA_NODEID_STRING(ns, const_cast<char*>(identifier.c_str()));
-            readValues[0u].nodeId = UA_NODEID_STRING(ns, const_cast<char*>("\"SCUs_Config\".\"SCU_Config\""));
+            readValues[0u].nodeId = UA_NODEID_STRING_ALLOC(ns, identifier.c_str());
         }
 
         //READ EXTENSION OBJECT
@@ -580,22 +559,17 @@ void OPCUAInterface_Thread_CB(ccs::base::Open62541ClientImpl *self) {
             if (ok) {
                 retval = UA_Client_call(self->client, UA_NODEID_STRING(3, const_cast<char*>("\"OPC_UA_Method_DB\"")),
                                         UA_NODEID_STRING(3, const_cast<char*>("\"OPC_UA_Method_DB\".Method")), inSize, tempVariant, &outSize[0], &output2);
-                log_info("METHOD CALLED!");
+//                retval = UA_Client_call(self->client, UA_NODEID_STRING(3, const_cast<char*>("\"OPC_UA_Method_DB\"")),
+//                                        UA_NODEID_STRING_ALLOC(mns, midName.c_str()), inSize, tempVariant, &outSize[0], &output2);
             }
         }
         ok = (retval == 0x00U); /* UA_STATUSCODE_GOOD */
+        if (ok)
+            log_info("METHOD CALL");
 
     }
 
     for (ccs::types::uint32 index = 0u; (ok && (index < (self->m_var_table)->GetSize())); index += 1u) {
-
-        ccs::types::string name;
-
-        if ((self->m_var_table)->GetKeyword(name, index) != STATUS_SUCCESS) {
-            log_warning("%s - LUTable<>::GetKeyword failed", __FUNCTION__);
-            continue;
-        }
-
         ccs::base::Open62541ClientImpl::VariableInfo_t varInfo;
 
         if ((self->m_var_table)->GetValue(varInfo, index) != STATUS_SUCCESS) {
@@ -660,14 +634,14 @@ bool Open62541ClientImpl::AddVariable(const ccs::types::char8 *const name,
         varInfo.__type = type;
     }
 
-    if (status) {
-        status = ((static_cast<ccs::types::CompoundType*>(NULL) != this->m_type) && (static_cast<LUTable<VariableInfo_t>*>(NULL) != this->m_var_table));
-    }
-
-    if (status) {
-        status = (this->m_type)->AddAttribute(name, varInfo.__type); // Type definition for the variable cache
-
-    }
+//    if (status) {
+//        status = ((static_cast<ccs::types::CompoundType*>(NULL) != this->m_type) && (static_cast<LUTable<VariableInfo_t>*>(NULL) != this->m_var_table));
+//    }
+//
+//    if (status) {
+//        status = (this->m_type)->AddAttribute(name, varInfo.__type); // Type definition for the variable cache
+//
+//    }
 
     if (status) {
         status = (this->m_var_table)->AddPair(name, varInfo, index);
@@ -685,7 +659,6 @@ bool Open62541Client::SetNumberOfNodes(const ccs::types::uint32 dim) {
 
 bool Open62541ClientImpl::SetNumberOfNodes(const ccs::types::uint32 dim) {
 
-    methodId = new const ccs::types::char8*[dim];
     extObj = new const ccs::types::char8*[dim];
     return true;
 
@@ -714,16 +687,14 @@ bool Open62541ClientImpl::SetEONodeId(const std::string chan) {
     return true;
 }
 
-bool Open62541Client::AddMethod(const ccs::types::char8 *const methodId,
-                                const ccs::types::uint32 index) {
+bool Open62541Client::AddMethod(const std::string methodId) {
 
-    return __impl->AddMethod(methodId, index);
+    return __impl->AddMethod(methodId);
 }
 
-bool Open62541ClientImpl::AddMethod(const ccs::types::char8 *const methodId,
-                                    const ccs::types::uint32 index) {
-
-    this->methodId[index] = methodId;
+bool Open62541ClientImpl::AddMethod(const std::string methodId) {
+    this->methodId = new ccs::types::char8[methodId.length() + 1];
+    methodId.copy(this->methodId, methodId.length(), 0);
     return true;
 }
 
@@ -734,8 +705,8 @@ bool Open62541ClientImpl::Initialise(void) {
     this->m_var_table = new LUTable<VariableInfo_t>(MAXIMUM_VARIABLE_NUM); // The table will be filled with application-specific variable list
     this->m_initialized = false;
 
-    this->m_type = new (std::nothrow) ccs::types::CompoundType("uaif::VariableCache_t");
-    this->m_value = static_cast<ccs::types::AnyValue*>(NULL);
+//    this->m_type = new (std::nothrow) ccs::types::CompoundType("uaif::VariableCache_t");
+//    this->m_value = static_cast<ccs::types::AnyValue*>(NULL);
 
     log_info("Open62541ClientImpl::Initialise - Creating OPCUA Client and Initialising configuration");
 
@@ -1072,7 +1043,7 @@ Open62541Client::~Open62541Client(void) {
 
 Open62541ClientImpl::~Open62541ClientImpl(void) {
 
-    delete[] methodId;
+    delete methodId;
     delete[] extObj;
 
     free(dataPtr);
